@@ -16,7 +16,6 @@ class Todo
   on: (evt, callback) ->
     @events.on(evt, callback)
 
-
 Todo.create = ({title: title, done: done}) ->
   new Todo(title, done)
 
@@ -29,23 +28,17 @@ class Todos
     @store.save @toRaw()
     @
 
-  remaining: ->
-    $.grep @store.all(), (item) -> !item.done
-
-  done: ->
-    $.grep @store.all(), (item) -> item.done
-
   create: (todo_text) ->
     @add new Todo(todo_text)
 
   add: (todo) ->
     @items.push todo
-    @save
+    @save()
     Pubsub.publish("add", todo)
 
   refresh: () ->
     raw_items = @store.all()
-    @items = @createAndBind(item) for item in raw_items
+    @items = (@createAndBind(item) for item in raw_items)
     @items = [@items] unless $.isArray @items
     @length = @items.length
 
@@ -79,9 +72,6 @@ class TodoApp
 
   render: =>
     @addAll()
-    done = @collection.done().length
-    remaining = @collection.remaining().length
-
     if @collection.length then @main.show() else @main.hide()
 
   addAll: ->
@@ -89,7 +79,7 @@ class TodoApp
 
   addOne: (evt, todo) =>
     view = new TodoItemView(todo)
-    @el.find("#todo-list").append(view.render())
+    @el.find("#todo-list").append(view.render().el)
 
   createOnEnter: (evt) =>
     return unless evt.keyCode == 13
@@ -107,13 +97,13 @@ class TodoItemView extends Mustachio
     @model.on("done", @render)
 
   render: =>
-    @el = $(super)
+    if !@el
+      @el = $(super)
+      @el.find(".toggle").on("click", @toggle)
+      @input = @el.find('.edit')
+
     @el.toggleClass("done", @model.done)
-
-    @input = @el.find('.edit')
-    @el.find(".toggle").on("click", @toggle)
-
-    @el
+    @
 
   toggle: =>
     @model.toggle()

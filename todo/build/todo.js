@@ -62,35 +62,28 @@
       return this;
     };
 
-    Todos.prototype.remaining = function() {
-      return $.grep(this.store.all(), function(item) {
-        return !item.done;
-      });
-    };
-
-    Todos.prototype.done = function() {
-      return $.grep(this.store.all(), function(item) {
-        return item.done;
-      });
-    };
-
     Todos.prototype.create = function(todo_text) {
       return this.add(new Todo(todo_text));
     };
 
     Todos.prototype.add = function(todo) {
       this.items.push(todo);
-      this.save;
+      this.save();
       return Pubsub.publish("add", todo);
     };
 
     Todos.prototype.refresh = function() {
-      var item, raw_items, _i, _len;
+      var item, raw_items;
       raw_items = this.store.all();
-      for (_i = 0, _len = raw_items.length; _i < _len; _i++) {
-        item = raw_items[_i];
-        this.items = this.createAndBind(item);
-      }
+      this.items = (function() {
+        var _i, _len, _results;
+        _results = [];
+        for (_i = 0, _len = raw_items.length; _i < _len; _i++) {
+          item = raw_items[_i];
+          _results.push(this.createAndBind(item));
+        }
+        return _results;
+      }).call(this);
       if (!$.isArray(this.items)) {
         this.items = [this.items];
       }
@@ -136,10 +129,7 @@
     }
 
     TodoApp.prototype.render = function() {
-      var done, remaining;
       this.addAll();
-      done = this.collection.done().length;
-      remaining = this.collection.remaining().length;
       if (this.collection.length) {
         return this.main.show();
       } else {
@@ -161,7 +151,7 @@
     TodoApp.prototype.addOne = function(evt, todo) {
       var view;
       view = new TodoItemView(todo);
-      return this.el.find("#todo-list").append(view.render());
+      return this.el.find("#todo-list").append(view.render().el);
     };
 
     TodoApp.prototype.createOnEnter = function(evt) {
@@ -193,11 +183,13 @@
     }
 
     TodoItemView.prototype.render = function() {
-      this.el = $(TodoItemView.__super__.render.apply(this, arguments));
+      if (!this.el) {
+        this.el = $(TodoItemView.__super__.render.apply(this, arguments));
+        this.el.find(".toggle").on("click", this.toggle);
+        this.input = this.el.find('.edit');
+      }
       this.el.toggleClass("done", this.model.done);
-      this.input = this.el.find('.edit');
-      this.el.find(".toggle").on("click", this.toggle);
-      return this.el;
+      return this;
     };
 
     TodoItemView.prototype.toggle = function() {
