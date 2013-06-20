@@ -18,16 +18,12 @@
     </section>
 
     <script type="text/x-handlebars-template" id="item-template">
-      <li>
-        <div class="view">
-          <input class="toggle" type="checkbox" {{#if done}} checked="checked"{{/if}} />
-          <label>{{title}}</label>
-          <a class="destroy"></a>
-        </div>
-        <input class="edit" type="text" value="{{title}}" />
-      </li>
+      <div class="view">
+        <input class="toggle" type="checkbox" {{#if done}} checked="checked"{{/if}} />
+        <label>{{title}}</label>
+        <a class="destroy"></a>
+      </div>
     </script>
-
 
     <script src="vendor/handlebars.js"></script>
     <script src="build/mustachio.js"></script>

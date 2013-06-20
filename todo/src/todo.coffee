@@ -1,20 +1,36 @@
-class Pubsub
-Pubsub = $({})
-Pubsub.publish = Pubsub.trigger;
+initEventHandler = (context) ->
+  events = $({})
+  events.publish = events.trigger
+
+  context.on = (evt, callback) ->
+    events.on(evt, callback)
+
+  context.events = events
+  events
 
 class Todo
   constructor: (@title, @done=false) ->
-    @events = $({})
+    initEventHandler(@)
 
   toJSON: ->
     {title: @title, done: @done}
 
   toggle: =>
-    @done = !@done
-    @events.trigger("done")
+    if @done then @notDone() else @setDone()
 
-  on: (evt, callback) ->
-    @events.on(evt, callback)
+  setDone: ->
+    @done = true
+    @change()
+
+  notDone: ->
+    @done = false
+    @change()
+
+  delete: =>
+    @events.publish "remove", @
+
+  change: ->
+    @events.publish "change", @
 
 Todo.create = ({title: title, done: done}) ->
   new Todo(title, done)
@@ -22,32 +38,50 @@ Todo.create = ({title: title, done: done}) ->
 class Todos
   constructor: () ->
     @store = new Storage("todo")
-    @refresh()
+    @items = []
+
+    initEventHandler(@)
 
   save: =>
-    @store.save @toRaw()
+    @items = @store.save @toRaw()
     @
 
   create: (todo_text) ->
-    @add new Todo(todo_text)
+    todo = new Todo(todo_text)
+    @add(todo)
 
-  add: (todo) ->
-    @items.push todo
-    @save()
-    Pubsub.publish("add", todo)
+  size: ->
+    @items.length
+
+  add: (todo, notify=true) ->
+    todo.on("change", @save)
+    todo.on("remove", @remove)
+
+    todo = @store.add(todo)
+    @items.push(todo)
+
+    @events.publish("add", todo) if notify
+    todo
+
+  all: ->
+    @items
+
+  clear: ->
+    @store.clear()
+
+  remove: (evtOrTodo, todo) =>
+    todo = evtOrTodo unless todo
+    @items = @store.remove todo
 
   refresh: () ->
     raw_items = @store.all()
-    @items = (@createAndBind(item) for item in raw_items)
-    @items = [@items] unless $.isArray @items
-    @length = @items.length
+    (@createAndBind(item) for item in raw_items)
 
-    Pubsub.publish("all")
+    @events.publish("all")
 
-  createAndBind: (todo) ->
-    todo = Todo.create(todo)
-    todo.on("done", @save)
-    todo
+  _createFromRaw: (raw_item) ->
+    todo = Todo.create(raw_item)
+    @add(todo, false)
 
   toRaw: () ->
     attrs = []
@@ -60,13 +94,14 @@ class TodoApp
     @el = $(el)
 
     @input = @el.find("#new-todo")
-    @allCheckbox = @el.find("#toggle-all")[0]
+    @allCheckbox = @el.find("#toggle-all").first()
     @main = @el.find('#main')
 
-    Pubsub.on("all", @render)
-    Pubsub.on("add", @addOne)
+    @collection.on("all", @render)
+    @collection.on("add", @addOne)
 
     @input.on("keypress", @createOnEnter)
+    @allCheckbox.on("click", @toggleAll)
 
     @collection.refresh()
 
@@ -75,10 +110,10 @@ class TodoApp
     if @collection.length then @main.show() else @main.hide()
 
   addAll: ->
-    @addOne(null, item) for item in @collection.items
+    @addOne(null, item) for item in @collection.all()
 
   addOne: (evt, todo) =>
-    view = new TodoItemView(todo)
+    view = new TodoView(todo)
     @el.find("#todo-list").append(view.render().el)
 
   createOnEnter: (evt) =>
@@ -88,19 +123,31 @@ class TodoApp
     @collection.create @input.val()
     @input.val ''
 
-class TodoItemView extends Mustachio
+  toggleAll: (evt) =>
+    target = $(evt.currentTarget)
+
+    (if target.is(':checked') then todo.setDone() else todo.notDone()) for todo in @collection.all()
+
+
+class TodoView extends Mustachio
   templateName: "item-template"
 
   constructor: (@model) ->
     super @model
 
-    @model.on("done", @render)
+    @model.on("change", @render)
 
   render: =>
-    if !@el
-      @el = $(super)
-      @el.find(".toggle").on("click", @toggle)
-      @input = @el.find('.edit')
+    html = super
+
+    if @el
+      @el.html(html)
+    else
+      @el = $("<li>#{html}</li>")
+      @el.on("click", ".toggle", @toggle)
+      @el.on("click", ".destroy", @remove)
+
+    @input = @el.find('.edit')
 
     @el.toggleClass("done", @model.done)
     @
@@ -108,5 +155,8 @@ class TodoItemView extends Mustachio
   toggle: =>
     @model.toggle()
 
-$ ->
-  window.app = new TodoApp("#todoapp")
+  remove: =>
+    @model.remove()
+    @el.remove()
+
+BFG.each [Todo, Todos], (klass) -> window[klass.name] = klass
