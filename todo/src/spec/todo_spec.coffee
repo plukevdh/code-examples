@@ -35,6 +35,7 @@ describe "Todo", ->
 
 # Things to note:
 # - doesn't care about the internals of the Todo. just handles the persistence and aggregation
+# - is really only testing where things come in and go out (boundaries)
 
 describe "Todos", ->
   todos = null
@@ -99,4 +100,3 @@ describe "Todos", ->
 
 # Other things to note:
 # - we never test the constructors. needing tests for custructors mean they're doing too much
-#

@@ -128,6 +128,9 @@ class TodoApp
 
     (if target.is(':checked') then todo.setDone() else todo.notDone()) for todo in @collection.all()
 
+# Things to note:
+# - TodoView updates the model on action, waits for change signal from model to update.
+#   This ensures our view stays in sync with the model
 
 class TodoView extends Mustachio
   templateName: "item-template"
