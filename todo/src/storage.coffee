@@ -3,20 +3,27 @@ class Storage
     @items = @_refresh()
 
   add: (item) ->
-    item.id = @_guid()
-    @items[item.id] = item
+    id = @_guid()
+
+    item.id = id
+    @items[id] = item
 
     @save()
-    item
+    id
 
   get: (guid) ->
     @items[guid]
+
+  update: (item) ->
+    throw "Item not found" unless @_itemExists(item.id)
+    @items[item.id] = item
+    @save()
 
   remove: (item) ->
     @removeId(item.id)
 
   removeId: (guid) ->
-    throw "Item not found" unless BFG.any BFG.keys(@items), (id) -> id == guid
+    throw "Item not found" unless @_itemExists(guid)
     delete @items[guid]
 
     @save()
@@ -24,12 +31,15 @@ class Storage
   all: () ->
     BFG.values @items
 
-  save: (items=@items) ->
-    localStorage.setItem @key, @_toJSON(items)
+  save: ->
+    localStorage.setItem @key, @_toJSON(@items)
     @all()
 
   size: ->
     @all().length
+
+  _itemExists: (guid) ->
+    BFG.any BFG.keys(@items), (id) -> id == guid
 
   _refresh: () ->
     raw_data = localStorage[@key] || {}
@@ -38,7 +48,7 @@ class Storage
   clear: ->
     delete localStorage[@key]
 
-  _toJSON: (items=@items) ->
+  _toJSON: (items) ->
     JSON.stringify items
 
   _fromJSON: (json) ->

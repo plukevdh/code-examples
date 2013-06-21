@@ -9,11 +9,11 @@ initEventHandler = (context) ->
   events
 
 class Todo
-  constructor: (@title, @done=false) ->
+  constructor: (@title, @done=false, @id=null) ->
     initEventHandler(@)
 
   toJSON: ->
-    {title: @title, done: @done}
+    {title: @title, done: @done, id: @id}
 
   toggle: =>
     if @done then @notDone() else @setDone()
@@ -32,8 +32,8 @@ class Todo
   change: ->
     @events.publish "change", @
 
-Todo.create = ({title: title, done: done}) ->
-  new Todo(title, done)
+Todo.create = ({title: title, done: done, id: id}) ->
+  new Todo(title, done, id)
 
 class Todos
   constructor: () ->
@@ -42,9 +42,8 @@ class Todos
 
     initEventHandler(@)
 
-  save: =>
-    @items = @store.save @toRaw()
-    @
+  save: (evt, todo) =>
+    @store.update(todo.toJSON())
 
   create: (todo_text) ->
     todo = new Todo(todo_text)
@@ -53,14 +52,13 @@ class Todos
   size: ->
     @items.length
 
-  add: (todo, notify=true) ->
-    todo.on("change", @save)
-    todo.on("remove", @remove)
+  add: (todo) ->
+    @_bindItem(todo)
 
-    todo = @store.add(todo)
+    todo.id = @store.add(todo.toJSON())
     @items.push(todo)
 
-    @events.publish("add", todo) if notify
+    @events.publish("add", todo)
     todo
 
   all: ->
@@ -68,6 +66,7 @@ class Todos
 
   clear: ->
     @store.clear()
+    @events.publish("all")
 
   remove: (evtOrTodo, todo) =>
     todo = evtOrTodo unless todo
@@ -75,13 +74,19 @@ class Todos
 
   refresh: () ->
     raw_items = @store.all()
-    (@createAndBind(item) for item in raw_items)
+    @items = (@_createFromRaw(item) for item in raw_items)
 
     @events.publish("all")
+    @
 
   _createFromRaw: (raw_item) ->
     todo = Todo.create(raw_item)
-    @add(todo, false)
+    @_bindItem(todo)
+    todo
+
+  _bindItem: (todo) ->
+    todo.on("change", @save, todo)
+    todo.on("remove", @remove)
 
   toRaw: () ->
     attrs = []
@@ -96,6 +101,7 @@ class TodoApp
     @input = @el.find("#new-todo")
     @allCheckbox = @el.find("#toggle-all").first()
     @main = @el.find('#main')
+    @list = @main.find("#todo-list")
 
     @collection.on("all", @render)
     @collection.on("add", @addOne)
@@ -106,15 +112,17 @@ class TodoApp
     @collection.refresh()
 
   render: =>
+    @list.html('')
     @addAll()
-    if @collection.length then @main.show() else @main.hide()
+    if @collection.size() then @main.show() else @main.hide()
 
   addAll: ->
     @addOne(null, item) for item in @collection.all()
 
   addOne: (evt, todo) =>
     view = new TodoView(todo)
-    @el.find("#todo-list").append(view.render().el)
+    @list.append(view.render().el)
+    @main.show() unless @main.is(':visible')
 
   createOnEnter: (evt) =>
     return unless evt.keyCode == 13
@@ -159,7 +167,7 @@ class TodoView extends Mustachio
     @model.toggle()
 
   remove: =>
-    @model.remove()
+    @model.delete()
     @el.remove()
 
 BFG.each [Todo, Todos, TodoApp], (klass) -> window[klass.name] = klass
