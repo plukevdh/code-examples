@@ -162,4 +162,4 @@ class TodoView extends Mustachio
     @model.remove()
     @el.remove()
 
-BFG.each [Todo, Todos], (klass) -> window[klass.name] = klass
+BFG.each [Todo, Todos, TodoApp], (klass) -> window[klass.name] = klass
