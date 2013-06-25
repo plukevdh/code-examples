@@ -2,7 +2,6 @@
 <head>
   <title>Todo.js Example</title>
   <link rel="stylesheet" type="text/css" href="./css/todo.css"/>
-  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
 </head>
 <body>
   <div id="todoapp">
@@ -25,6 +24,7 @@
       </div>
     </script>
 
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
     <script src="vendor/handlebars.js"></script>
     <script src="build/mustachio.js"></script>
     <script src="build/bfg.js"></script>
@@ -32,9 +32,9 @@
     <script src="build/todo.js"></script>
 
     <script type="text/javascript">
-    $(function() {
-      app = new TodoApp("#todoapp");
-    })
+      $(function() {
+        window.app = new TodoApp("#todoapp");
+      });
     </script>
   </div>
 </body>

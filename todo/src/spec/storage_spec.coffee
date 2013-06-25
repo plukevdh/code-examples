@@ -24,23 +24,29 @@ describe "Storage", ->
     expect(store.all()).toEqual([{item: "Test", id: 0}, {item: "Something", id: 1}])
 
   it "can lookup items by guid", ->
-    item = store.add({item: "Test"})
+    itemId = store.add({item: "Test"})
 
-    expect(item).toEqual(store.get(item.id))
+    item = store.get(itemId)
+
+    expect(item.item).toEqual("Test")
 
   it "can remove items", ->
-    item1 = store.add({item: "Test"})
-    item2 = store.add({item: "Something"})
+    id1 = store.add({item: "Test"})
+    id2 = store.add({item: "Something"})
+
+    item1 = store.get(id1)
+    item2 = store.get(id2)
 
     store.remove(item2)
     expect(store.size()).toEqual 1
     expect(store.all()).toEqual [item1]
 
   it "can remove an item by guid", ->
-    item1 = store.add({item: "Test"})
-    item2 = store.add({item: "Something"})
+    id1 = store.add({item: "Test"})
+    id2 = store.add({item: "Something"})
 
-    store.removeId(item1.id)
+    store.removeId(id1)
+    item2 = store.get(id2)
 
     expect(store.size()).toEqual 1
     expect(store.all()[0]).toEqual item2

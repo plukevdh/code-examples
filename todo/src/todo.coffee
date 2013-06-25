@@ -16,17 +16,17 @@ class Todo
     {title: @title, done: @done, id: @id}
 
   toggle: =>
-    if @done then @notDone() else @setDone()
+    if @done then @setNotDone() else @setDone()
 
   setDone: ->
     @done = true
     @change()
 
-  notDone: ->
+  setNotDone: ->
     @done = false
     @change()
 
-  delete: =>
+  remove: =>
     @events.publish "remove", @
 
   change: ->
@@ -69,7 +69,7 @@ class Todos
     @events.publish("all")
 
   remove: (evtOrTodo, todo) =>
-    todo = evtOrTodo unless todo
+    todo ?= evtOrTodo
     @items = @store.remove todo
 
   refresh: () ->
@@ -134,7 +134,7 @@ class TodoApp
   toggleAll: (evt) =>
     target = $(evt.currentTarget)
 
-    (if target.is(':checked') then todo.setDone() else todo.notDone()) for todo in @collection.all()
+    (if target.is(':checked') then todo.setDone() else todo.setNotDone()) for todo in @collection.all()
 
 # Things to note:
 # - TodoView updates the model on action, waits for change signal from model to update.
@@ -167,7 +167,7 @@ class TodoView extends Mustachio
     @model.toggle()
 
   remove: =>
-    @model.delete()
+    @model.remove()
     @el.remove()
 
 BFG.each [Todo, Todos, TodoApp], (klass) -> window[klass.name] = klass

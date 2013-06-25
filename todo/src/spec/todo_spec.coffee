@@ -16,19 +16,19 @@ describe "Todo", ->
     expect(todo.done).toBeFalsy()
 
   it "can generate object representation (for JSON)", ->
-    expect(todo.toJSON()).toEqual({title: "test", done: false})
+    expect(todo.toJSON()).toEqual({title: "test", done: false, id: null})
 
   it "triggers a change event on done toggle", ->
     spyOn(todo.events, "publish")
 
     todo.setDone()
-    todo.notDone()
+    todo.setNotDone()
     expect(todo.events.publish).toHaveBeenCalledWith("change", todo)
     expect(todo.events.publish.callCount).toEqual(2)
 
   it "triggers a remove event on remove toggle", ->
     spyOn(todo.events, "publish")
-    todo.delete()
+    todo.remove()
 
     expect(todo.events.publish).toHaveBeenCalledWith("remove", todo)
 
@@ -55,7 +55,7 @@ describe "Todos", ->
 
   it "can add a record object", ->
     todo = new Todo("item")
-    todos.add(todo)
+    todo = todos.add(todo)
 
     expect(todos.size()).toEqual(1)
     expect(todos.all()).toEqual([todo])
@@ -82,13 +82,13 @@ describe "Todos", ->
 
     todos.remove(todo1)
 
-    expect(todos.all()).toEqual [todo2]
+    expect(todos.all()[0]).toEqual todo2.toJSON()
 
   it "removes a record on record deletion", ->
     todo = todos.create("item 1")
 
     expect(todos.size()).toEqual(1)
-    todo.delete()
+    todo.remove()
     expect(todos.size()).toEqual(0)
 
   it "refresh triggers update", ->
