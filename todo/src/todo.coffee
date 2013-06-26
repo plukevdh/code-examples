@@ -11,11 +11,9 @@ class Todo
   constructor: (@title, @done=false, @id=null) ->
     initEventHandler(@)
 
-  toJSON: ->
-    {title: @title, done: @done, id: @id}
+  toJSON: -> {title: @title, done: @done, id: @id}
 
-  toggle: =>
-    if @done then @setNotDone() else @setDone()
+  toggle: => if @done then @setNotDone() else @setDone()
 
   setDone: ->
     @done = true
@@ -25,11 +23,9 @@ class Todo
     @done = false
     @change()
 
-  remove: =>
-    @events.publish "remove", @
+  remove: -> @events.publish "remove", @
 
-  change: ->
-    @events.publish "change", @
+  change: -> @events.publish "change", @
 
 Todo.create = ({title: title, done: done, id: id}) ->
   new Todo(title, done, id)
@@ -41,15 +37,15 @@ class Todos
 
     initEventHandler(@)
 
-  update: (evt, todo) =>
+  update: (evtOrTodo, todo) =>
+    todo ?= evtOrTodo
     @store.update(todo.toJSON())
 
   create: (todo_text) ->
     todo = new Todo(todo_text)
     @add(todo)
 
-  size: ->
-    @items.length
+  size: -> @items.length
 
   add: (todo) ->
     @_bindItem(todo)
@@ -60,8 +56,7 @@ class Todos
     @events.publish("add", todo)
     todo
 
-  all: ->
-    @items
+  all: -> @items
 
   clear: ->
     @store.clear()
@@ -85,7 +80,7 @@ class Todos
     todo
 
   _bindItem: (todo) ->
-    todo.on("change", @update, todo)
+    todo.on("change", @update)
     todo.on("remove", @remove)
 
 # Things to note:
@@ -110,13 +105,10 @@ class TodoView extends Mustachio
       @el.on("click", ".toggle", @toggle)
       @el.on("click", ".destroy", @remove)
 
-    @input = @el.find('.edit')
-
     @el.toggleClass("done", @todo.done)
     @
 
-  toggle: =>
-    @todo.toggle()
+  toggle: => @todo.toggle()
 
   remove: =>
     @todo.remove()
