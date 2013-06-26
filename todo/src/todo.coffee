@@ -66,6 +66,7 @@ class Todos
   clear: ->
     @store.clear()
     @events.publish("all")
+    @
 
   remove: (evtOrTodo, todo) =>
     todo ?= evtOrTodo
@@ -86,11 +87,6 @@ class Todos
   _bindItem: (todo) ->
     todo.on("change", @update, todo)
     todo.on("remove", @remove)
-
-  toRaw: () ->
-    attrs = []
-    attrs.push(item.toJSON()) for item in @items
-    attrs
 
 # Things to note:
 # - TodoView updates the model on action, waits for change signal from model to update.

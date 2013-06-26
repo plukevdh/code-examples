@@ -66,8 +66,8 @@ class Storage
 
   # Clears out all of the itmes in localStorage
   clear: ->
-    delete localStorage[@key]
-    @items = []
+    @items = {}
+    localStorage.setItem @key, null
 
   # Private methods...
   #
