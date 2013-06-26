@@ -2,10 +2,9 @@ initEventHandler = (context) ->
   events = $({})
   events.publish = events.trigger
 
-  context.on = (evt, callback) ->
-    events.on(evt, callback)
-
+  context.on = (evt, callback) -> events.on(evt, callback)
   context.events = events
+
   events
 
 class Todo
@@ -36,13 +35,13 @@ Todo.create = ({title: title, done: done, id: id}) ->
   new Todo(title, done, id)
 
 class Todos
-  constructor: () ->
+  constructor: ->
     @store = new Storage("todo")
     @items = []
 
     initEventHandler(@)
 
-  save: (evt, todo) =>
+  update: (evt, todo) =>
     @store.update(todo.toJSON())
 
   create: (todo_text) ->
@@ -85,13 +84,53 @@ class Todos
     todo
 
   _bindItem: (todo) ->
-    todo.on("change", @save, todo)
+    todo.on("change", @update, todo)
     todo.on("remove", @remove)
 
   toRaw: () ->
     attrs = []
     attrs.push(item.toJSON()) for item in @items
     attrs
+
+# Things to note:
+# - TodoView updates the model on action, waits for change signal from model to update.
+#   This ensures our view stays in sync with the model
+
+class TodoView extends Mustachio
+  templateName: "item-template"
+
+  constructor: (@todo) ->
+    super @todo
+
+    @todo.on("change", @render)
+
+  render: =>
+    html = super
+
+    if @el
+      @el.html(html)
+    else
+      @el = $("<li>#{html}</li>")
+      @el.on("click", ".toggle", @toggle)
+      @el.on("click", ".destroy", @remove)
+
+    @input = @el.find('.edit')
+
+    @el.toggleClass("done", @todo.done)
+    @
+
+  toggle: =>
+    @todo.toggle()
+
+  remove: =>
+    @todo.remove()
+    @el.remove()
+
+# Things to note:
+# - The app manages all interaction. With the main elements
+# - The sub-views (TodoView) manages anything related to the controls contained within
+# - Actions move inward, never out. Subviews, never affect the parent,
+#   but parent may affect the sub.
 
 class TodoApp
   constructor: (el) ->
@@ -135,39 +174,5 @@ class TodoApp
     target = $(evt.currentTarget)
 
     (if target.is(':checked') then todo.setDone() else todo.setNotDone()) for todo in @collection.all()
-
-# Things to note:
-# - TodoView updates the model on action, waits for change signal from model to update.
-#   This ensures our view stays in sync with the model
-
-class TodoView extends Mustachio
-  templateName: "item-template"
-
-  constructor: (@model) ->
-    super @model
-
-    @model.on("change", @render)
-
-  render: =>
-    html = super
-
-    if @el
-      @el.html(html)
-    else
-      @el = $("<li>#{html}</li>")
-      @el.on("click", ".toggle", @toggle)
-      @el.on("click", ".destroy", @remove)
-
-    @input = @el.find('.edit')
-
-    @el.toggleClass("done", @model.done)
-    @
-
-  toggle: =>
-    @model.toggle()
-
-  remove: =>
-    @model.remove()
-    @el.remove()
 
 BFG.each [Todo, Todos, TodoApp], (klass) -> window[klass.name] = klass

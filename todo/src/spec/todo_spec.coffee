@@ -62,13 +62,13 @@ describe "Todos", ->
     expect(todo.id).not.toBeNull()
 
   it "saves records when internals are updated change", ->
-    spyOn(todos, "save")
+    spyOn(todos, "update")
 
     todo = new Todo("item")
     todos.add(todo)
     todo.toggle()
 
-    expect(todos.save).toHaveBeenCalled()
+    expect(todos.update).toHaveBeenCalled()
 
   it "can get all records", ->
     todo1 = todos.create("item")
