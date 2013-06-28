@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>todo.coffee</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    
+      <ul id="jump_to">
+        <li>
+          <a class="large" href="javascript:void(0);">Jump To &hellip;</a>
+          <a class="small" href="javascript:void(0);">+</a>
+          <div id="jump_wrapper">
+          <div id="jump_page">
+            
+              
+              <a class="source" href="bfg.html">
+                bfg.coffee
+              </a>
+            
+              
+              <a class="source" href="mustachio.html">
+                mustachio.coffee
+              </a>
+            
+              
+              <a class="source" href="storage.html">
+                storage.coffee
+              </a>
+            
+              
+              <a class="source" href="todo.html">
+                todo.coffee
+              </a>
+            
+          </div>
+        </li>
+      </ul>
+    
+    <ul class="sections">
+        
+          <li id="title">
+              <div class="annotation">
+                  <h1>todo.coffee</h1>
+              </div>
+          </li>
+        
+        
+        
+        <li id="section-1">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+              
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="function"><span class="title">initEventHandler</span></span> = (context) -&gt;
+  events = $({})
+  events.publish = events.trigger
+
+  context.<span class="literal">on</span> = events.<span class="literal">on</span>
+  context.events = events
+  events
+
+<span class="class"><span class="keyword">class</span> <span class="title">Todo</span></span>
+  constructor: (<span class="property">@title</span>, <span class="property">@done</span>=<span class="literal">false</span>, <span class="property">@id</span>=<span class="literal">null</span>) -&gt;
+    initEventHandler(@)
+
+  toJSON: -&gt;
+    {title: <span class="property">@title</span>, done: <span class="property">@done</span>, id: <span class="property">@id</span>}
+
+  toggle: =&gt;
+    <span class="keyword">if</span> <span class="property">@done</span> <span class="keyword">then</span> <span class="property">@setNotDone</span>() <span class="keyword">else</span> <span class="property">@setDone</span>()
+
+  setDone: -&gt;
+    <span class="property">@done</span> = <span class="literal">true</span>
+    <span class="property">@change</span>()
+
+  setNotDone: -&gt;
+    <span class="property">@done</span> = <span class="literal">false</span>
+    <span class="property">@change</span>()
+
+  remove: =&gt;
+    <span class="property">@events</span>.publish <span class="string">"remove"</span>, @
+
+  change: -&gt;
+    <span class="property">@events</span>.publish <span class="string">"change"</span>, @
+
+Todo.<span class="function"><span class="title">create</span></span> = ({title: title, done: done, id: id}) -&gt;
+  <span class="keyword">new</span> Todo(title, done, id)
+
+<span class="class"><span class="keyword">class</span> <span class="title">Todos</span></span>
+  constructor: () -&gt;
+    <span class="property">@store</span> = <span class="keyword">new</span> Storage(<span class="string">"todo"</span>)
+    <span class="property">@items</span> = []
+
+    initEventHandler(@)
+
+  save: (evt, todo) =&gt;
+    <span class="property">@store</span>.update(todo.toJSON())
+
+  create: (todo_text) -&gt;
+    todo = <span class="keyword">new</span> Todo(todo_text)
+    <span class="property">@add</span>(todo)
+
+  size: -&gt;
+    <span class="property">@items</span>.length
+
+  add: (todo) -&gt;
+    <span class="property">@_bindItem</span>(todo)
+
+    todo.id = <span class="property">@store</span>.add(todo.toJSON())
+    <span class="property">@items</span>.push(todo)
+
+    <span class="property">@events</span>.publish(<span class="string">"add"</span>, todo)
+    todo
+
+  all: -&gt;
+    <span class="property">@items</span>
+
+  clear: -&gt;
+    <span class="property">@store</span>.clear()
+    <span class="property">@events</span>.publish(<span class="string">"all"</span>)
+
+  remove: (evtOrTodo, todo) =&gt;
+    todo ?= evtOrTodo
+    <span class="property">@items</span> = <span class="property">@store</span>.remove todo
+
+  refresh: () -&gt;
+    raw_items = <span class="property">@store</span>.all()
+    <span class="property">@items</span> = (<span class="property">@_createFromRaw</span>(item) <span class="keyword">for</span> item <span class="keyword">in</span> raw_items)
+
+    <span class="property">@events</span>.publish(<span class="string">"all"</span>)
+    @
+
+  _createFromRaw: (raw_item) -&gt;
+    todo = Todo.create(raw_item)
+    <span class="property">@_bindItem</span>(todo)
+    todo
+
+  _bindItem: (todo) -&gt;
+    todo.<span class="literal">on</span>(<span class="string">"change"</span>, <span class="property">@save</span>, todo)
+    todo.<span class="literal">on</span>(<span class="string">"remove"</span>, <span class="property">@remove</span>)
+
+  toRaw: () -&gt;
+    attrs = []
+    attrs.push(item.toJSON()) <span class="keyword">for</span> item <span class="keyword">in</span> <span class="property">@items</span>
+    attrs
+
+<span class="class"><span class="keyword">class</span> <span class="title">TodoApp</span></span>
+  constructor: (el) -&gt;
+    <span class="property">@collection</span> = <span class="keyword">new</span> Todos()
+    <span class="property">@el</span> = $(el)
+
+    <span class="property">@input</span> = <span class="property">@el</span>.find(<span class="string">"#new-todo"</span>)
+    <span class="property">@allCheckbox</span> = <span class="property">@el</span>.find(<span class="string">"#toggle-all"</span>).first()
+    <span class="property">@main</span> = <span class="property">@el</span>.find(<span class="string">'#main'</span>)
+    <span class="property">@list</span> = <span class="property">@main</span>.find(<span class="string">"#todo-list"</span>)
+
+    <span class="property">@collection</span>.<span class="literal">on</span>(<span class="string">"all"</span>, <span class="property">@render</span>)
+    <span class="property">@collection</span>.<span class="literal">on</span>(<span class="string">"add"</span>, <span class="property">@addOne</span>)
+
+    <span class="property">@input</span>.<span class="literal">on</span>(<span class="string">"keypress"</span>, <span class="property">@createOnEnter</span>)
+    <span class="property">@allCheckbox</span>.<span class="literal">on</span>(<span class="string">"click"</span>, <span class="property">@toggleAll</span>)
+
+    <span class="property">@collection</span>.refresh()
+
+  render: =&gt;
+    <span class="property">@list</span>.html(<span class="string">''</span>)
+    <span class="property">@addAll</span>()
+    <span class="keyword">if</span> <span class="property">@collection</span>.size() <span class="keyword">then</span> <span class="property">@main</span>.show() <span class="keyword">else</span> <span class="property">@main</span>.hide()
+
+  addAll: -&gt;
+    <span class="property">@addOne</span>(<span class="literal">null</span>, item) <span class="keyword">for</span> item <span class="keyword">in</span> <span class="property">@collection</span>.all()
+
+  addOne: (evt, todo) =&gt;
+    view = <span class="keyword">new</span> TodoView(todo)
+    <span class="property">@list</span>.append(view.render().el)
+    <span class="property">@main</span>.show() <span class="keyword">unless</span> <span class="property">@main</span>.<span class="keyword">is</span>(<span class="string">':visible'</span>)
+
+  createOnEnter: (evt) =&gt;
+    <span class="keyword">return</span> <span class="keyword">unless</span> evt.keyCode == <span class="number">13</span>
+    <span class="keyword">return</span> <span class="keyword">unless</span> <span class="property">@input</span>.val()
+
+    <span class="property">@collection</span>.create <span class="property">@input</span>.val()
+    <span class="property">@input</span>.val <span class="string">''</span>
+
+  toggleAll: (evt) =&gt;
+    target = $(evt.currentTarget)
+
+    (<span class="keyword">if</span> target.<span class="keyword">is</span>(<span class="string">':checked'</span>) <span class="keyword">then</span> todo.setDone() <span class="keyword">else</span> todo.setNotDone()) <span class="keyword">for</span> todo <span class="keyword">in</span> <span class="property">@collection</span>.all()</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-2">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-2">&#182;</a>
+              </div>
+              <p>Things to note:
+- TodoView updates the model on action, waits for change signal from model to update.
+  This ensures our view stays in sync with the model</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">TodoView</span> <span class="keyword">extends</span> <span class="title">Mustachio</span></span>
+  templateName: <span class="string">"item-template"</span>
+
+  constructor: (<span class="property">@model</span>) -&gt;
+    <span class="keyword">super</span> <span class="property">@model</span>
+
+    <span class="property">@model</span>.<span class="literal">on</span>(<span class="string">"change"</span>, <span class="property">@render</span>)
+
+  render: =&gt;
+    html = <span class="keyword">super</span>
+
+    <span class="keyword">if</span> <span class="property">@el</span>
+      <span class="property">@el</span>.html(html)
+    <span class="keyword">else</span>
+      <span class="property">@el</span> = $(<span class="string">"&lt;li&gt;<span class="subst">#{html}</span>&lt;/li&gt;"</span>)
+      <span class="property">@el</span>.<span class="literal">on</span>(<span class="string">"click"</span>, <span class="string">".toggle"</span>, <span class="property">@toggle</span>)
+      <span class="property">@el</span>.<span class="literal">on</span>(<span class="string">"click"</span>, <span class="string">".destroy"</span>, <span class="property">@remove</span>)
+
+    <span class="property">@input</span> = <span class="property">@el</span>.find(<span class="string">'.edit'</span>)
+
+    <span class="property">@el</span>.toggleClass(<span class="string">"done"</span>, <span class="property">@model</span>.done)
+    @
+
+  toggle: =&gt;
+    <span class="property">@model</span>.toggle()
+
+  remove: =&gt;
+    <span class="property">@model</span>.remove()
+    <span class="property">@el</span>.remove()
+
+BFG.each [Todo, Todos, TodoApp], (klass) -&gt; window[klass.name] = klass</pre></div></div>
+            
+        </li>
+        
+    </ul>
+  </div>
+</body>
+</html>

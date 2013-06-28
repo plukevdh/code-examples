@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>bfg.coffee</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    
+      <ul id="jump_to">
+        <li>
+          <a class="large" href="javascript:void(0);">Jump To &hellip;</a>
+          <a class="small" href="javascript:void(0);">+</a>
+          <div id="jump_wrapper">
+          <div id="jump_page">
+            
+              
+              <a class="source" href="bfg.html">
+                bfg.coffee
+              </a>
+            
+              
+              <a class="source" href="mustachio.html">
+                mustachio.coffee
+              </a>
+            
+              
+              <a class="source" href="storage.html">
+                storage.coffee
+              </a>
+            
+              
+              <a class="source" href="todo.html">
+                todo.coffee
+              </a>
+            
+          </div>
+        </li>
+      </ul>
+    
+    <ul class="sections">
+        
+          <li id="title">
+              <div class="annotation">
+                  <h1>bfg.coffee</h1>
+              </div>
+          </li>
+        
+        
+        
+        <li id="section-1">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+              <p><strong>BFG</strong> is the namespace for all helper methods which are generally of minimal consequence
+These methods are generally very small and extremely focused in their purpose. We&#39;d like to
+keep this namespace as compact as possible to decrease load time in pages/libs that utilize it.</p>
+<p>This is the global namespace, setup on <code>window</code> so that we can access it externally elsewhere.
+Coffeescript likes to close compilations in a local, anonymous closure, so this gets us past that.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>window.BFG = {}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-2">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h3">
+                <a class="pilcrow" href="#section-2">&#182;</a>
+              </div>
+              <h3>Boolean test helpers</h3>
+<p>Checks if arrays, strings or objects are empty.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>BFG.<span class="function"><span class="title">isEmpty</span></span> = (obj) -&gt;
+  <span class="keyword">return</span> obj.length <span class="keyword">is</span> <span class="number">0</span> <span class="keyword">if</span> BFG.isArray(obj) <span class="keyword">or</span> BFG.isString(obj)
+  <span class="keyword">return</span> <span class="literal">false</span> <span class="keyword">for</span> own key <span class="keyword">of</span> obj
+  <span class="literal">true</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-3">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-3">&#182;</a>
+              </div>
+              <p>Check if this is an HTML element (not jquery specific)</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>BFG.<span class="function"><span class="title">isElement</span></span>   = (obj) -&gt; obj <span class="keyword">and</span> obj.nodeType <span class="keyword">is</span> <span class="number">1</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-4">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-4">&#182;</a>
+              </div>
+              <p>Checks if the given object is an array. Attempts to use native array detection.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>BFG.isArray     = nativeIsArray <span class="keyword">or</span> (obj) -&gt; !!(obj <span class="keyword">and</span> obj.concat <span class="keyword">and</span> obj.unshift <span class="keyword">and</span> <span class="keyword">not</span> obj.callee)</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-5">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-5">&#182;</a>
+              </div>
+              <p>Checks if the given object is an arguments array.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>BFG.<span class="function"><span class="title">isArguments</span></span> = (obj) -&gt; obj <span class="keyword">and</span> obj.callee</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-6">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-6">&#182;</a>
+              </div>
+              <p>Most of the following are fairly self explainitory</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>BFG.<span class="function"><span class="title">isFunction</span></span>  = (obj) -&gt; !!(obj <span class="keyword">and</span> obj.constructor <span class="keyword">and</span> obj.call <span class="keyword">and</span> obj.apply)
+BFG.<span class="function"><span class="title">isString</span></span>    = (obj) -&gt; !!(obj <span class="keyword">is</span> <span class="string">''</span> <span class="keyword">or</span> (obj <span class="keyword">and</span> obj.charCodeAt <span class="keyword">and</span> obj.substr))
+BFG.<span class="function"><span class="title">isNumber</span></span>    = (obj) -&gt; (obj <span class="keyword">is</span> +obj) <span class="keyword">or</span> toString.call(obj) <span class="keyword">is</span> <span class="string">'[object Number]'</span>
+BFG.<span class="function"><span class="title">isBoolean</span></span>   = (obj) -&gt; obj <span class="keyword">is</span> <span class="literal">true</span> <span class="keyword">or</span> obj <span class="keyword">is</span> <span class="literal">false</span>
+BFG.<span class="function"><span class="title">isDate</span></span>      = (obj) -&gt; !!(obj <span class="keyword">and</span> obj.getTimezoneOffset <span class="keyword">and</span> obj.setUTCFullYear)
+BFG.<span class="function"><span class="title">isRegExp</span></span>    = (obj) -&gt; !!(obj <span class="keyword">and</span> obj.exec <span class="keyword">and</span> (obj.ignoreCase <span class="keyword">or</span> obj.ignoreCase <span class="keyword">is</span> <span class="literal">false</span>))
+BFG.<span class="function"><span class="title">isNaN</span></span>       = (obj) -&gt; BFG.isNumber(obj) <span class="keyword">and</span> window.isNaN(obj)
+BFG.<span class="function"><span class="title">isNull</span></span>      = (obj) -&gt; obj <span class="keyword">is</span> <span class="literal">null</span>
+BFG.<span class="function"><span class="title">isUndefined</span></span> = (obj) -&gt; <span class="keyword">typeof</span> obj <span class="keyword">is</span> <span class="string">'undefined'</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-7">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-7">&#182;</a>
+              </div>
+              <p><code>.range</code> is a helper that gives you a range array for other
+iteration methods. It takes at least one parameter, the range end.
+Otherwise it can take a start value, an end value, and a
+step value (how far each iteration should move).</p>
+<p>Usage looks like</p>
+<pre><code>BFG.range(1, 5) # =&gt; [1, 2, 3, 4, 5]
+BFG.range(1, 20, 3) # =&gt; [1, 4, 7, 10, 13, 16, 19]</code></pre>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>BFG.<span class="function"><span class="title">range</span></span> = (start, stop, step) -&gt;
+  a         = arguments
+  solo      = a.length &lt;= <span class="number">1</span>
+  i = start = <span class="keyword">if</span> solo <span class="keyword">then</span> <span class="number">0</span> <span class="keyword">else</span> a[<span class="number">0</span>]
+  stop      = <span class="keyword">if</span> solo <span class="keyword">then</span> a[<span class="number">0</span>] <span class="keyword">else</span> a[<span class="number">1</span>]
+  step      = a[<span class="number">2</span>] <span class="keyword">or</span> <span class="number">1</span>
+  len       = Math.ceil((stop - start) / step)
+  <span class="keyword">return</span> []   <span class="keyword">if</span> len &lt;= <span class="number">0</span>
+  range     = <span class="keyword">new</span> Array len
+  idx       = <span class="number">0</span>
+  <span class="keyword">loop</span>
+    <span class="keyword">return</span> range <span class="keyword">if</span> (<span class="keyword">if</span> step &gt; <span class="number">0</span> <span class="keyword">then</span> i - stop <span class="keyword">else</span> stop - i) &gt;= <span class="number">0</span>
+    range[idx] = i
+    idx++
+    i+= step</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-8">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-8">&#182;</a>
+              </div>
+              <p>Return an array of the keys of an object</p>
+<pre><code>BFG.keys {one: 1, two: 2, three: 3 }
+# returns [&#39;one&#39;, &#39;two&#39;, &#39;three&#39;]</code></pre>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>BFG.keys = nativeKeys <span class="keyword">or</span> (obj) -&gt;
+  <span class="keyword">return</span> BFG.range <span class="number">0</span>, obj.length <span class="keyword">if</span> BFG.isArray(obj)
+  key <span class="keyword">for</span> key, val <span class="keyword">of</span> obj
+
+
+BFG.<span class="function"><span class="title">values</span></span> = (obj) -&gt;
+  val <span class="keyword">for</span> key, val <span class="keyword">of</span> obj</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-9">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-9">&#182;</a>
+              </div>
+              <p>Return the array without the first one</p>
+<pre><code>BFG.rest([1,2,3])
+# returns [2,3]</code></pre>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>BFG.<span class="function"><span class="title">rest</span></span> = (array, index, guard) -&gt;
+  slice.call(array, <span class="keyword">if</span> BFG.isUndefined(index) <span class="keyword">or</span> guard <span class="keyword">then</span> <span class="number">1</span> <span class="keyword">else</span> index)</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-10">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-10">&#182;</a>
+              </div>
+              <p>Allows you to iterate over all elements in an array or object and act on them</p>
+<pre><code>BFG.each([1,2,3], (item) -&gt; alert item*5)</code></pre>
+<p>This will trigger 3 alerts with &quot;5&quot;, &quot;10&quot; and &quot;15&quot; respectively.
+Returns the original object.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>BFG.<span class="function"><span class="title">each</span></span> = (obj, iterator, context) -&gt;
+  <span class="keyword">try</span>
+    <span class="keyword">if</span> nativeForEach <span class="keyword">and</span> obj.forEach <span class="keyword">is</span> nativeForEach
+      obj.forEach iterator, context
+    <span class="keyword">else</span> <span class="keyword">if</span> BFG.isNumber obj.length
+      iterator.call context, obj[i], i, obj <span class="keyword">for</span> i <span class="keyword">in</span> [<span class="number">0.</span>..obj.length]
+    <span class="keyword">else</span>
+      iterator.call context, val, key, obj  <span class="keyword">for</span> own key, val <span class="keyword">of</span> obj
+  <span class="keyword">catch</span> e
+    <span class="keyword">throw</span> e <span class="keyword">if</span> e <span class="keyword">isnt</span> breaker
+  obj</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-11">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-11">&#182;</a>
+              </div>
+              <p>Allows you to iterate over all elements in an array or object and perform
+operations and get back an array of the modified results</p>
+<pre><code>changed = BFG.each([1,2,3], (item) -&gt; item*5)
+# changed == [5,10,15]</code></pre>
+<p>This and <code>.each</code> both allow you to pass an explicit context to bind <code>this</code> to.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>BFG.<span class="function"><span class="title">map</span></span> = (obj, iterator, context) -&gt;
+  <span class="keyword">return</span> obj.map(iterator, context) <span class="keyword">if</span> nativeMap <span class="keyword">and</span> obj.map <span class="keyword">is</span> nativeMap
+  results = []
+  BFG.each obj, (value, index, list) -&gt;
+    results.push iterator.call context, value, index, list
+  results</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-12">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-12">&#182;</a>
+              </div>
+              <p>Filter results based on an arbitrary test</p>
+<pre><code># Even numbers only
+BFG.filter [1,2,3,4,5,6], (item) -&gt; (item % 2 == 0)
+# returns [2,4,6]</code></pre>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>BFG.<span class="function"><span class="title">filter</span></span> = (obj, iterator, context) -&gt;
+  <span class="keyword">return</span> obj.filter iterator, context <span class="keyword">if</span> nativeFilter <span class="keyword">and</span> obj.filter <span class="keyword">is</span> nativeFilter
+  results = []
+  BFG.each obj, (value, index, list) -&gt;
+    results.push value <span class="keyword">if</span> iterator.call context, value, index, list
+  results
+
+BFG.<span class="function"><span class="title">identity</span></span> = (value) -&gt;
+  value
+
+any = BFG.<span class="function"><span class="title">any</span></span> = (obj, iterator, context) -&gt;
+  iterator || (iterator = BFG.identity)
+  result = <span class="literal">false</span>
+
+  <span class="keyword">return</span> result <span class="keyword">if</span> obj == <span class="literal">null</span>
+  <span class="keyword">return</span> obj.some(iterator, context) <span class="keyword">if</span> (nativeSome &amp;&amp; obj.some == nativeSome)
+  BFG.each obj, (value, index, list) -&gt;
+    <span class="keyword">return</span> breaker <span class="keyword">if</span> (result || (result = iterator.call(context, value, index, list)))
+
+  !!result
+
+BFG.<span class="function"><span class="title">find</span></span> = (obj, iterator, context) -&gt;
+  result = <span class="literal">null</span>
+  any obj, (value, index, list) -&gt;
+    <span class="keyword">if</span> (iterator.call(context, value, index, list))
+      result = value
+      <span class="keyword">return</span> <span class="literal">true</span>
+
+  result</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-13">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-13">&#182;</a>
+              </div>
+              <p><code>.bind</code> acts like jquery&#39;s proxy helper, in which we can explicitly set the
+<code>this</code> in the bound context.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>BFG.<span class="function"><span class="title">bind</span></span> = (func, context) -&gt;
+  <span class="keyword">return</span> nativeBind.apply(func, BFG.rest(arguments)) <span class="keyword">if</span> nativeBind <span class="keyword">and</span> func.bind <span class="keyword">is</span> nativeBind
+  args = BFG.rest arguments, <span class="number">2</span>
+  -&gt; func.apply context, args.concat(BFG.rest(args))</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-14">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-14">&#182;</a>
+              </div>
+              <p><code>.bindAll</code> allows us to bind all methods of a given object to a context. You can either
+specify an object, or string keys for method names:</p>
+<pre><code>BFG.bindAll(anObject, &#39;one&#39;, &#39;two&#39;, &#39;three&#39;)
+BFG.bindAll(anObject, anotherObject)</code></pre>
+<p>The second example will bind all methods from <code>anotherObject</code> to
+the context of anObject</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>BFG.<span class="function"><span class="title">bindAll</span></span> = (obj) -&gt;
+  funcs = <span class="keyword">if</span> arguments.length &gt; <span class="number">1</span> <span class="keyword">then</span> BFG.rest(arguments) <span class="keyword">else</span> functions(obj)
+  BFG.each funcs, (f) -&gt; obj[f] = BFG.bind obj[f], obj
+  obj</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-15">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h3">
+                <a class="pilcrow" href="#section-15">&#182;</a>
+              </div>
+              <h3>Private scope (not in the BFG namespace)</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="function"><span class="title">functions</span></span> = (obj) -&gt;
+  BFG.filter(BFG.keys(obj), (key) -&gt; BFG.isFunction(obj[key])).sort()
+
+breaker = <span class="keyword">if</span> <span class="keyword">typeof</span>(StopIteration) <span class="keyword">is</span> <span class="string">'undefined'</span> <span class="keyword">then</span> <span class="string">'__break__'</span> <span class="keyword">else</span> StopIteration
+
+FuncProto     = Function.prototype
+ArrayProto    = Array.prototype
+ObjProto      = Object.prototype
+
+nativeBind    = FuncProto.bind
+nativeIsArray = Array.isArray
+slice         = ArrayProto.slice
+nativeForEach = ArrayProto.forEach
+nativeMap     = ArrayProto.map
+nativeSome    = ArrayProto.some
+nativeKeys    = Object.keys
+toString      = ObjProto.toString</pre></div></div>
+            
+        </li>
+        
+    </ul>
+  </div>
+</body>
+</html>

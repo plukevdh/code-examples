@@ -41,8 +41,8 @@ class Todos
     todo ?= evtOrTodo
     @store.update(todo.toJSON())
 
-  create: (todo_text) ->
-    todo = new Todo(todo_text)
+  create: (text) ->
+    todo = new Todo(text)
     @add(todo)
 
   size: -> @items.length
@@ -60,7 +60,7 @@ class Todos
 
   clear: ->
     @store.clear()
-    @events.publish("all")
+    @events.publish("refresh")
     @
 
   remove: (evtOrTodo, todo) =>
@@ -71,7 +71,7 @@ class Todos
     raw_items = @store.all()
     @items = (@_createFromRaw(item) for item in raw_items)
 
-    @events.publish("all")
+    @events.publish("refresh")
     @
 
   _createFromRaw: (raw_item) ->
@@ -90,10 +90,11 @@ class Todos
 class TodoView extends Mustachio
   templateName: "item-template"
 
-  constructor: (@todo) ->
-    super @todo
+  constructor: (@model) ->
+    super @model
 
-    @todo.on("change", @render)
+    @model.on("change", @render)
+    @model.on("remove", @remove)
 
   render: =>
     html = super
@@ -103,15 +104,17 @@ class TodoView extends Mustachio
     else
       @el = $("<li>#{html}</li>")
       @el.on("click", ".toggle", @toggle)
-      @el.on("click", ".destroy", @remove)
+      @el.on("click", ".destroy", @destroy)
 
-    @el.toggleClass("done", @todo.done)
+    @el.toggleClass("done", @model.done)
     @
 
-  toggle: => @todo.toggle()
+  toggle: => @model.toggle()
+
+  destroy: =>
+    @model.remove()
 
   remove: =>
-    @todo.remove()
     @el.remove()
 
 # Things to note:
@@ -130,7 +133,7 @@ class TodoApp
     @main = @el.find('#main')
     @list = @main.find("#todo-list")
 
-    @collection.on("all", @render)
+    @collection.on("refresh", @render)
     @collection.on("add", @addOne)
 
     @input.on("keypress", @createOnEnter)
