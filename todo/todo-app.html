@@ -1,0 +1,41 @@
+<html>
+<head>
+  <title>Todo.js Example</title>
+  <link rel="stylesheet" type="text/css" href="./css/todo.css"/>
+</head>
+<body>
+  <div id="todoapp">
+    <header>
+      <h1>Todos</h1>
+      <input id="new-todo" type="text" placeholder="What needs to be done?">
+    </header>
+
+    <section id="main">
+      <input id="toggle-all" type="checkbox">
+      <label for="toggle-all">Mark all as complete</label>
+      <ul id="todo-list"></ul>
+    </section>
+
+    <script type="text/x-handlebars-template" id="item-template">
+      <div class="view">
+        <input class="toggle" type="checkbox" {{#if done}} checked="checked"{{/if}} />
+        <label>{{title}}</label>
+        <a class="destroy"></a>
+      </div>
+    </script>
+
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
+    <script src="vendor/handlebars.js"></script>
+    <script src="src/mustachio.js"></script>
+    <script src="src/bfg.js"></script>
+    <script src="src/storage.js"></script>
+    <script src="src/todo.js"></script>
+
+    <script type="text/javascript">
+      $(function() {
+        window.app = new TodoApp("#todoapp");
+      });
+    </script>
+  </div>
+</body>
+</html>

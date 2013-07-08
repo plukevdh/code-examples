@@ -1,0 +1,629 @@
+<html>
+<head>
+    <title>Todo App Tutorial | Examples</title>
+    <meta http-equiv="X-Powered-By" content="DocPad v6.44.0"/>
+    <link  rel="stylesheet" href="/styles/github.css" /><link  rel="stylesheet" href="/styles/flatly.css" /><link  rel="stylesheet" href="/styles/ext.css" />
+</head>
+<body>
+    <h1>The Todo App: Requirements to Product</h1>
+<p>The goal of this exercise is to think more modularly about how we break down requirements at a high level into individual components or modules that can make up the whole. There are mixtures of experience levels this is meant to reach, so if parts of it already fit what you know, skip down and hit other high points. This is also not a CoffeeScript tutorial, even though it is written in CoffeeScript and some pains are taken to explain how it works. Understand the process and how the product is being built from the requirements first, then try to make sense of the CoffeeScript.</p>
+<h3>Goals:</h3>
+<ul>
+<li>Think modularly around requirements and their representation in code</li>
+<li>Learn new patterns for how object communicate</li>
+<li>See some CoffeeScript in action</li>
+</ul>
+<h2>Step 1: Break it Apart</h2>
+<p><img src="/todo/todo-app.png" style="width:45%;" alt="todo app image"></p>
+<p>What are the main parts of a todo app? A title, a checkbox, and a method of entering new items and keeping them around. What do these parts represent?</p>
+<ul>
+<li>State</li>
+<li>Display</li>
+<li>Persistance</li>
+</ul>
+<p>How can we break the pieces of this app apart in code?</p>
+<pre class="highlighted"><code class="coffeescript"><span class="class"><span class="keyword">class</span> <span class="title">Todo</span></span></code></pre>
+<p><strong>cares about</strong>: title string, done state (boolean)
+This represents the state of the program.</p>
+<pre class="highlighted"><code class="coffeescript"><span class="class"><span class="keyword">class</span> <span class="title">Todos</span></span></code></pre>
+<p><strong>cares about</strong>: todos (basically an array ot Todo items)
+This covers the persistance of todos</p>
+<pre class="highlighted"><code class="coffeescript"><span class="class"><span class="keyword">class</span> <span class="title">TodoView</span></span></code></pre>
+<p><strong>cares about</strong>: a single todo
+This handles the display</p>
+<pre class="highlighted"><code class="coffeescript"><span class="class"><span class="keyword">class</span> <span class="title">TodoApp</span></span></code></pre>
+<p><strong>cares about</strong>: a collection of todos (via Todos) and the page (where these things get rendered)
+This piece brings all of the above pieces together</p>
+<h3>Leading questions</h3>
+<ul>
+<li><p>Where should the persistance be managed?
+Two options:</p>
+<ul>
+<li>the model</li>
+<li>the collection</li>
+</ul>
+</li>
+<li><p>How does our structuring determine the way interactions between the UI elements occur?</p>
+<ul>
+<li>The app may modify/change the subviews, subviews should never affect the parent view.</li>
+<li>Actions move inwards, never out.</li>
+</ul>
+</li>
+</ul>
+<h2>Step 2: Constructing</h2>
+<p>So what do all those pieces look like initially based on how we broke them up earlier? How do they start? What information do we feed each piece?</p>
+<pre class="highlighted"><code class="coffeescript"><span class="class"><span class="keyword">class</span> <span class="title">Todo</span></span>
+  constructor: (<span class="property">@title</span>, <span class="property">@done</span>=<span class="literal">false</span>) -&gt;
+
+<span class="comment"># Create methods from an object, using destructuring! This is important later</span>
+Todo.<span class="function"><span class="title">create</span></span> = ({title: title, done: done, id: id}) -&gt;
+  <span class="keyword">new</span> Todo(title, done, id)
+
+<span class="class"><span class="keyword">class</span> <span class="title">Todos</span></span>
+  constructor: -&gt;
+    <span class="property">@store</span> = <span class="keyword">new</span> Storage(<span class="string">"todo"</span>)  <span class="comment"># our magic storage box</span>
+    <span class="property">@items</span> = []
+
+<span class="class"><span class="keyword">class</span> <span class="title">TodoView</span> <span class="keyword">extends</span> <span class="title">Mustachio</span>  # <span class="title">our</span> <span class="title">magic</span> <span class="title">view</span> <span class="title">tool</span></span>
+  templateName: <span class="string">"item-template"</span>  <span class="comment"># magic attr identifying the template to use</span>
+
+  constructor: (<span class="property">@model</span>) -&gt;
+    <span class="keyword">super</span> <span class="property">@model</span>  <span class="comment"># ignore, initialization for Mustachio</span>
+
+<span class="class"><span class="keyword">class</span> <span class="title">TodoApp</span></span>
+  constructor: (selector) -&gt;
+    <span class="property">@collection</span> = <span class="keyword">new</span> Todos()
+    <span class="property">@el</span> = $(selector)</code></pre>
+<p>There&#39;s some unfortunate magic in there, but treat the magic as a black box that just gives you what you want.</p>
+<h2>Step 3: Persistance</h2>
+<p>Collection is handling persistance. So how do we reference Storage?</p>
+<p>The structure is a little bit tricky. Storage stores the basic data, (title, done state and ID)
+Todos wants to handle Todo objects. So whenever we cross the boundary of collection &lt;-&gt; storage,
+we have to recreate the Todo object from the attributes. The Todos/Storage combination is like a super stupid ORM. This is also more commonly called the <strong>repository pattern</strong> of data access. The model or business logic is separate from the persistance logic.</p>
+<table class="table table table-bordered table-striped">
+<thead>
+  <tr>
+    <th>Storage</th>
+    <th>Todos</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td>{title: &quot;Test&quot;, done: false, id: 123}</td>
+    <td><strong>Todo</strong> - id: 123, done: false, title: &quot;Test&quot;</td>
+  </tr>
+  <tr>
+    <td>{title: &quot;Other&quot;, done: true, id: 321}</td>
+    <td><strong>Todo</strong> - id: 321, done: true, title: &quot;Other&quot;</td>
+  </tr>
+</tbody>
+</table>
+
+<p>Therefore, Todo need a way to convert itself into an object literal. We&#39;ll call this method
+<code>toJSON</code></p>
+<pre class="highlighted"><code class="coffeescript"><span class="class"><span class="keyword">class</span> <span class="title">Todo</span></span>
+  toJSON: -&gt;
+    {title: <span class="property">@title</span>, done: <span class="property">@done</span>, id: <span class="property">@id</span>}</code></pre>
+<p>Then the methods that Todos needs to create can serialize with this method.</p>
+<pre class="highlighted"><code class="coffeescript"><span class="class"><span class="keyword">class</span> <span class="title">Todos</span></span>
+  add: (todo) -&gt;
+    <span class="comment"># add to storage, which returns a new id</span>
+    <span class="comment"># assign the id to the todo</span>
+    <span class="comment"># add to our local collection</span>
+    <span class="comment"># return the updated todo</span>
+
+    todo.id = <span class="property">@store</span>.add(todo.toJSON())
+    <span class="property">@items</span>.push todo
+    todo
+
+  remove: (todo) -&gt;
+    <span class="property">@store</span>.remove(todo)
+
+  all: -&gt;
+    <span class="property">@items</span>
+
+  refresh: () -&gt;
+    <span class="comment"># getting all from storage returns the raw objects,</span>
+    <span class="comment"># not Todo objects, so we need to convert. Let's move the converter to a separate</span>
+    <span class="comment"># method</span>
+
+    raw_items = <span class="property">@store</span>.all()
+
+    <span class="comment"># explain loops in CoffeeScript...</span>
+    <span class="property">@items</span> = (<span class="property">@_createFromRaw</span>(item) <span class="keyword">for</span> item <span class="keyword">in</span> raw_items)
+
+    <span class="comment"># return self, we could return the `@items` here, but we don't really want to</span>
+    <span class="comment"># reference `@items` on its own. We want to access @items through the Todos object</span>
+    @
+
+  <span class="comment"># in JS, we pretend that methods prefixed with _ are private.</span>
+  _createFromRaw: (item) -&gt;
+    Todo.create(item)
+
+  update: (todo) -&gt;
+    <span class="property">@store</span>.update(todo.toJSON())</code></pre>
+<p>Why do we wrap so many of the Storage methods instead of just using Storage directly as needed? First, it&#39;s a design pattern called Single Responsiblity Principle (SRP). It states that each class should encapsulate a single responsibility. If Todos worried about collections of Todo objects and also dealing with the logic of persisting them to localStorage, it would be performing two responsibilities.</p>
+<p>Secondly, it helps us keep the low-level details about the data structure required for persisting to a simple key-value storage mechanism like localStorage out of our application. If we decided to change our backend storage to use Memcached or even another .NET web API that worked with SQL or MongoDB, the Storage class is the only thing that would need to change. Our application would require <strong>ZERO CHANGES</strong>. This is why SRP is important.</p>
+<p>And with that, we have a simple object, collection and persistance layer! In one fell swoop, we&#39;ve completed one of our three goals: persistance. What about state?</p>
+<p>Let&#39;s <a href="/todo/example-0.html">try it</a>!</p>
+<h2>Step 4: States and Events</h2>
+<pre class="highlighted"><code class="coffeescript"><span class="class"><span class="keyword">class</span> <span class="title">Todo</span></span>
+  toggle: -&gt;
+    <span class="property">@done</span> = !<span class="property">@done</span>  <span class="comment"># flipflop the state</span></code></pre>
+<p>Well that was easy! But wait... How do we persist state changes when the collection is responsible for persisting? How do we communicate changes?</p>
+<p>Another concern we have along with SRP is keeping code coupling low. Low or loose coupling allows us to make changes in one class without affecting code in another class while allowing them to communicate changes and events. Enter jQuery Events.</p>
+<pre class="highlighted"><code class="coffeescript"><span class="function"><span class="title">initEventHandler</span></span> = (context) -&gt;
+  <span class="comment"># Create an object for our event bindings.</span>
+  events = $({})
+
+  <span class="comment"># alias trigger to publish (for clarity)</span>
+  events.publish = events.trigger
+
+  <span class="comment"># alias the `on` function on the context to the event's `on`</span>
+  context.<span class="literal">on</span> = events.<span class="literal">on</span>
+
+  <span class="comment"># add this event handler to the context and return the events object.</span>
+  context.events = events
+  events</code></pre>
+<p>This is a fun bit of code. What it&#39;s doing is creating an event handler on the given context. This scopes our event handlers to the objects that we pass to this initializer. Here&#39;s how it ties into our Todo class as we update the constructor:</p>
+<pre class="highlighted"><code class="coffeescript"><span class="class"><span class="keyword">class</span> <span class="title">Todo</span></span>
+  constructor: (<span class="property">@title</span>, <span class="property">@done</span>=<span class="literal">false</span>, <span class="property">@id</span>=<span class="literal">null</span>) -&gt;
+    initEventHandler(@)</code></pre>
+<p>So we&#39;re passing the newly created Todo object (<code>@</code> == <code>this</code>) to the event handler initializer, which creates a @events handler within each instance of Todo. Again, as noted before, we never want to access this @events object outside of the Todo, which is why we &quot;alias&quot; the <code>on</code> on the event handler to an <code>on</code> method on the object. What does this give us?</p>
+<p>Let&#39;s use this new functionality in a couple of places:</p>
+<pre class="highlighted"><code class="coffeescript"><span class="class"><span class="keyword">class</span> <span class="title">Todo</span></span>
+  toggle: -&gt;
+    <span class="property">@done</span> = !<span class="property">@done</span>
+    <span class="property">@events</span>.publish(<span class="string">"change"</span>, @)
+
+<span class="class"><span class="keyword">class</span> <span class="title">Todos</span></span>
+  _createFromRaw: (raw_item) -&gt;
+    todo = Todo.create(raw_item)
+
+    <span class="property">@_bindItem</span>(todo)  <span class="comment"># new...</span>
+
+    todo
+
+  add: (todo) -&gt;
+    <span class="property">@_bindItem</span>(todo)  <span class="comment"># new ...</span>
+
+    todo.id = <span class="property">@store</span>.add(todo.toJSON())
+    <span class="property">@items</span>.push todo
+    todo
+
+  <span class="comment"># and here it is...</span>
+  _bindItem: (todo) -&gt;
+    todo.<span class="literal">on</span>(<span class="string">"change"</span>, <span class="property">@update</span>)
+
+  <span class="comment"># Note the change in the arrow type (fat arrow) and the method signature / arity</span>
+  update: (evtOrTodo, todo) =&gt;
+    todo ?= evtOrTodo  <span class="comment"># conditional assignment</span>
+    <span class="property">@store</span>.update(todo.toJSON())</code></pre>
+<p>First some notes. Whenever we do event binding, the method being called (<code>update</code> in this case) will need to change from the normal <code>-&gt;</code> to <code>=&gt;</code> to ensure the &quot;this&quot; (<code>@</code>) context is preserved. If we didn&#39;t do this, <code>@</code> would reference the calling context (<code>Todo</code>), instead of the context we are acting in (<code>Todos</code>) and we would get an error saying that there is no method &quot;update&quot; on Todo, which is true, albeit somewhat confusing.</p>
+<p>The other note is that the first argument in a method being called when using jQuery events is the event that was triggered. Therefore our first argument is the event and the second one is the argument we passed when we published the event (the todo object that was updated). Because we still want to be able to call the update in the form of <code>todos.update(todo)</code>, we also allow for the first argument to be a todo. Then we use the conditional assignment operator to say &quot;if the <code>todo</code> var is not set, then the first argument (<code>evtOrTodo</code>) must be a todo object and not an event&quot;. A little confusing and there are clearer ways to do the same thing, but for brevity and simplicity, we&#39;ll do this.</p>
+<p>And with that, we can change the item and have it automatically updated in the collection and therefore in storage. <a href="/todo/example-1.html">Whaaaaa?!</a></p>
+<p>This is what makes eventing so powerful. Actions within Todos can happen independently of the Todo worrying about the actual state change. In fact, Todos doesn&#39;t care about what state a given Todo is in.</p>
+<p>So just how easy is it to add more events? For example, let&#39;s say we want a <code>remove</code> method to the todo, so that we could call <code>todo.remove()</code> and not worry about about removing it from the collection. Well let&#39;s do it.</p>
+<pre class="highlighted"><code class="coffeescript"><span class="class"><span class="keyword">class</span> <span class="title">Todo</span></span>
+  <span class="comment"># a single method added, which does nothing but publish an event.</span>
+  remove: -&gt; <span class="property">@events</span>.publish(<span class="string">"remove"</span>, @)
+
+<span class="class"><span class="keyword">class</span> <span class="title">Todos</span></span>
+  <span class="comment"># remember the arrow change and the signature difference</span>
+  remove: (evtOrTodo, todo) =&gt;
+    todo ?= evtOrTodo
+    <span class="property">@items</span> = <span class="property">@store</span>.remove todo
+
+  _bindItem: (todo) -&gt;
+    todo.<span class="literal">on</span>(<span class="string">"change"</span>, <span class="property">@update</span>)
+    todo.<span class="literal">on</span>(<span class="string">"remove"</span>, <span class="property">@remove</span>)  <span class="comment"># added...</span></code></pre>
+<p>A mere 10 lines of code. Lovely. And this completes goal #2 for us: State. One more to go.</p>
+<p>Let&#39;s bring it all together as it stands:</p>
+<pre class="highlighted"><code class="coffeescript"><span class="function"><span class="title">initEventHandler</span></span> = (context) -&gt;
+  events = $({})
+  events.publish = events.trigger
+
+  context.<span class="function"><span class="title">on</span></span> = (evt, callback) -&gt; events.<span class="literal">on</span>(evt, callback)
+  context.events = events
+
+  events
+
+<span class="class"><span class="keyword">class</span> <span class="title">Todo</span></span>
+  constructor: (<span class="property">@title</span>, <span class="property">@done</span>=<span class="literal">false</span>, <span class="property">@id</span>=<span class="literal">null</span>) -&gt; initEventHandler(@)
+
+  toggle: -&gt;
+    <span class="property">@done</span> = !<span class="property">@done</span>
+    <span class="property">@events</span>.publish(<span class="string">"change"</span>, @)
+
+  toJSON: -&gt; {title: <span class="property">@title</span>, done: <span class="property">@done</span>, id: <span class="property">@id</span>}
+
+Todo.<span class="function"><span class="title">create</span></span> = ({title: title, done: done, id: id}) -&gt;
+  <span class="keyword">new</span> Todo(title, done, id)
+
+<span class="class"><span class="keyword">class</span> <span class="title">Todos</span></span>
+  constructor: -&gt;
+    <span class="property">@store</span> = <span class="keyword">new</span> Storage(<span class="string">"todo"</span>)
+    <span class="property">@items</span> = []
+
+  all: -&gt; <span class="property">@items</span>
+
+  size: -&gt; <span class="property">@items</span>.length
+
+  clear: -&gt;
+    <span class="property">@store</span>.clear()
+    <span class="property">@items</span> = []
+    @
+
+  add: (todo) -&gt;
+    <span class="property">@_bindItem</span>(todo)
+
+    todo.id = <span class="property">@store</span>.add(todo.toJSON())
+    <span class="property">@items</span>.push todo
+    todo
+
+  remove: (todo) -&gt;
+    <span class="property">@store</span>.remove(todo)
+    <span class="property">@refresh</span>()
+
+  refresh: -&gt;
+    raw_items = <span class="property">@store</span>.all()
+    <span class="property">@items</span> = (<span class="property">@_createFromRaw</span>(item) <span class="keyword">for</span> item <span class="keyword">in</span> raw_items)
+    @
+
+  _createFromRaw: (item) -&gt;
+    todo = Todo.create(item)
+    <span class="property">@_bindItem</span>(todo)
+    todo
+
+  update: (evtOrTodo, todo) =&gt;
+    todo ?= evtOrTodo
+    <span class="property">@store</span>.update(todo.toJSON())
+
+  _bindItem: (todo) -&gt;
+    todo.<span class="literal">on</span>(<span class="string">"change"</span>, <span class="property">@update</span>, todo)</code></pre>
+<p>Barely 60 lines of code and we&#39;ve got most of the heavy work done. Now we just need some UI for this bad boy.</p>
+<h2>Step 5: Views</h2>
+<p><strong>Introduce the HTML / templates</strong></p>
+<p>First, let&#39;s deal with the input side of things: The TodoApp This is a little more complicated, but nothing unexpected. This app/view owns the collection of todos and the views and helps them talk together. Let&#39;s set it up.</p>
+<p>The actions the view can do is:</p>
+<ul>
+<li>Type in a new todo title, and hit enter to submit.</li>
+<li>Render all the existing todos</li>
+<li>Check the &quot;toggle all&quot; checkbox and have all the todos toggle.</li>
+</ul>
+<pre class="highlighted"><code class="coffeescript"><span class="class"><span class="keyword">class</span> <span class="title">Todos</span></span>
+  <span class="comment"># shortcut method so that we can create a todo with just the text of the input box</span>
+  create: (text) -&gt;
+    todo = <span class="keyword">new</span> Todo(text)
+    <span class="property">@add</span>(todo)
+
+<span class="class"><span class="keyword">class</span> <span class="title">TodoApp</span></span>
+  constructor: (el) -&gt;
+    <span class="comment"># Create the new collection and set the views we will be binding to (el)</span>
+    <span class="property">@collection</span> = <span class="keyword">new</span> Todos()
+    <span class="property">@el</span> = $(el)
+
+    <span class="comment"># Get a reference to all the UI elements we care about...</span>
+    <span class="property">@input</span> = <span class="property">@el</span>.find(<span class="string">"#new-todo"</span>)  <span class="comment"># the input</span>
+    <span class="property">@main</span> = <span class="property">@el</span>.find(<span class="string">'#main'</span>)  <span class="comment"># the wrapper around the todo list</span>
+    <span class="property">@list</span> = <span class="property">@main</span>.find(<span class="string">"#todo-list"</span>)  <span class="comment"># the todo list</span>
+
+    <span class="comment"># bind the events we care about</span>
+    <span class="property">@input</span>.<span class="literal">on</span>(<span class="string">"keypress"</span>, <span class="property">@createOnEnter</span>)
+
+    <span class="comment"># get all of the existing elements</span>
+    <span class="property">@collection</span>.refresh()
+
+  createOnEnter: (evt) =&gt;
+    <span class="keyword">return</span> <span class="keyword">unless</span> evt.keyCode == <span class="number">13</span>  <span class="comment"># only respond to the enter keypress</span>
+    <span class="keyword">return</span> <span class="keyword">unless</span> <span class="property">@input</span>.val()  <span class="comment"># only respond if the input is not empty (cannot create empty todos)</span>
+
+    <span class="comment"># create the new Todo via the collection</span>
+    <span class="property">@collection</span>.create <span class="property">@input</span>.val()
+
+    <span class="comment"># clear the input</span>
+    <span class="property">@input</span>.val <span class="string">''</span></code></pre>
+<p>This step lets us input new todos from the text box, even though it doesn&#39;t insert the new todo elements into the page yet. Take <a href="/todo/example-2.html">a look</a>.</p>
+<p>Since we&#39;re cheating with our views a bit with some template magic (via handlebars), the rest is pretty simple. Let&#39;s create a Todo view. These views do three basic things:</p>
+<ul>
+<li>Display the todo&#39;s title</li>
+<li>Have a checkbox that toggles the state</li>
+<li>Have a delete button that deletes the item</li>
+</ul>
+<p>All of those actions are handled by the code we&#39;ve already written. So all we need to do is have a view that takes a todo (or model) and ties the click actions to the actions on our model.</p>
+<pre class="highlighted"><code class="coffeescript"><span class="class"><span class="keyword">class</span> <span class="title">TodoView</span> <span class="keyword">extends</span> <span class="title">Mustachio</span></span>
+  <span class="comment"># ignore the template and the constructor for now.</span>
+  templateName: <span class="string">"item-template"</span>
+
+  constructor: (<span class="property">@model</span>) -&gt; <span class="keyword">super</span> <span class="property">@model</span>
+
+  <span class="comment"># this is where the view gets gets put into a page</span>
+  render: -&gt;
+    <span class="comment"># render the html from the template</span>
+    html = <span class="keyword">super</span>  <span class="comment"># this is Mustachio magic. I'll show you this one day.</span>
+
+    <span class="comment"># if we have an element already, we just need to update the html</span>
+    <span class="keyword">if</span> <span class="property">@el</span>
+      <span class="property">@el</span>.html(html)
+
+    <span class="comment"># otherwise, we need to create the view and bind our click events</span>
+    <span class="comment"># (the checkbox and the delete button)</span>
+    <span class="keyword">else</span>
+      <span class="property">@el</span> = $(<span class="string">"&lt;li&gt;<span class="subst">#{html}</span>&lt;/li&gt;"</span>)  <span class="comment"># wrap it li for styling</span>
+      <span class="property">@el</span>.<span class="literal">on</span>(<span class="string">"click"</span>, <span class="string">".toggle"</span>, <span class="property">@toggle</span>)
+      <span class="property">@el</span>.<span class="literal">on</span>(<span class="string">"click"</span>, <span class="string">".destroy"</span>, <span class="property">@remove</span>)
+
+    @  <span class="comment"># return the view, not the HTML.</span>
+
+  <span class="comment"># now we need the two methods we call on the `click` action</span>
+  toggle: =&gt; <span class="property">@model</span>.toggle()
+
+  remove: =&gt;
+    <span class="property">@model</span>.remove()  <span class="comment"># tell the todo to remove itself</span>
+    <span class="property">@el</span>.remove()  <span class="comment"># remove the view from the page</span></code></pre>
+<p>A few things of note. The render function sets a variable called <code>@el</code> which keeps a reference to the element on the page. This is important if we want to be able to update this later on as the model changes. This means that if we need to re-render the element, we don&#39;t want to replace the element altogether, we just want to replace the HTML.</p>
+<p>So now we have a view, let&#39;s go back and wire it into the app.</p>
+<pre class="highlighted"><code class="coffeescript"><span class="class"><span class="keyword">class</span> <span class="title">TodoApp</span></span>
+  addOne: (todo) -&gt;
+    <span class="comment"># create a view object</span>
+    view = <span class="keyword">new</span> TodoView(todo)
+
+    <span class="comment"># append the html from the view to our list</span>
+    <span class="property">@list</span>.append(view.render().el)
+
+    <span class="comment"># show the todo list (initially hidden) if it is hidden, this will be the case if this is the first element</span>
+    <span class="property">@main</span>.show() <span class="keyword">unless</span> <span class="property">@main</span>.<span class="keyword">is</span>(<span class="string">":visible"</span>)
+
+  addAll: -&gt; <span class="property">@addOne</span>(todo) <span class="keyword">for</span> todo <span class="keyword">in</span> <span class="property">@collection</span>.all()
+
+  render: -&gt;
+    <span class="comment"># clear any existing todos when we do a full refresh</span>
+    <span class="property">@list</span>.html(<span class="string">''</span>)
+
+    <span class="comment"># add all the todos</span>
+    <span class="property">@addAll</span>()
+
+    <span class="comment"># show the collection view if there are items in our collection.</span>
+    <span class="keyword">if</span> <span class="property">@collection</span>.size() <span class="keyword">then</span> <span class="property">@main</span>.show() <span class="keyword">else</span> <span class="property">@main</span>.hide()</code></pre>
+<p>And bam, we have all the pieces wired together! We can take a look at it, even though we have to handle the rendering ourselves. <a href="/todo/example-3.html">Here it is</a>.</p>
+<h1>Step 5: Everything in Sync</h1>
+<p>As the demo shows, there are a few missing pieces yet, namely, how the view renders and updates itself when things happen. What did we decide was means of communicating change between objects? Events! So let&#39;s think about the signals we need to generate.</p>
+<ul>
+<li>Todos refreshed or recreated from Storage = update the full view</li>
+<li>Todo created = add it to the TodoApp view</li>
+<li>Todo removed = remove the TodoView</li>
+<li>Todo changed = update the TodoView</li>
+</ul>
+<p>Some of these signals already exist from the model in the form of the &quot;change&quot; and &quot;remove&quot; signals. Can bind those in the view and use the signals to update the view, rather than the click actions.</p>
+<pre class="highlighted"><code class="coffeescript"><span class="class"><span class="keyword">class</span> <span class="title">TodoView</span></span>
+  constructor: (<span class="property">@model</span>) -&gt;
+    <span class="keyword">super</span> <span class="property">@model</span>
+
+    <span class="comment"># bind to the events the todo generates</span>
+    <span class="property">@model</span>.<span class="literal">on</span>(<span class="string">"change"</span>, <span class="property">@render</span>)
+    <span class="property">@model</span>.<span class="literal">on</span>(<span class="string">"remove"</span>, <span class="property">@remove</span>)
+
+  <span class="comment"># destroy tells the element to delete itself. this will cause the "remove" event to fire</span>
+  <span class="comment"># which will now call the "remove" event below</span>
+  destroy: =&gt;
+    <span class="property">@model</span>.remove()
+
+  <span class="comment"># remove now just removes the element from the page</span>
+  remove: =&gt;
+    <span class="property">@el</span>.remove()
+
+  render: =&gt;
+    html = <span class="keyword">super</span>
+
+    <span class="keyword">if</span> <span class="property">@el</span>
+      <span class="property">@el</span>.html(html)
+    <span class="keyword">else</span>
+      <span class="property">@el</span> = $(<span class="string">"&lt;li&gt;<span class="subst">#{html}</span>&lt;/li&gt;"</span>)
+      <span class="property">@el</span>.<span class="literal">on</span>(<span class="string">"click"</span>, <span class="string">".toggle"</span>, <span class="property">@toggle</span>)
+      <span class="property">@el</span>.<span class="literal">on</span>(<span class="string">"click"</span>, <span class="string">".destroy"</span>, <span class="property">@destroy</span>)  <span class="comment"># change this method...</span>
+
+    <span class="comment"># add in the UI strike through toggle for kicks, based on the todo's done state state</span>
+    <span class="property">@el</span>.toggleClass(<span class="string">"done"</span>, <span class="property">@model</span>.done)
+    @</code></pre>
+<p>Why are we splitting up <code>destroy</code> and <code>remove</code> and adding more callbacks? Well imagine we have a the console open and we want to delete elements there. If I call <code>todo.remove()</code>, the element will be removed from the collection but will still remain in the view. However, if we rely on the events to trigger the actual UI removal, we ensure the view and the model&#39;s state stay in sync.</p>
+<p>So now we have the updates and removals taken care of. How about the initial render and collection adds? Well now we need to handle events that trigger on the collection, which means adding an event handler to the Todos class. With our magic <code>initEventHandler()</code> helper, we can do this in a single line. Here&#39;s what we end up with.</p>
+<pre class="highlighted"><code class="coffeescript"><span class="class"><span class="keyword">class</span> <span class="title">Todos</span></span>
+  constructor: -&gt;
+    <span class="comment"># ...</span>
+    initEventHandler(@)
+
+  add: (todo) -&gt;
+    <span class="comment"># ...</span>
+    <span class="property">@events</span>.publish(<span class="string">"add"</span>, todo)  <span class="comment"># our new "add" event</span>
+
+  clear: -&gt;
+    <span class="comment"># ...</span>
+    <span class="property">@events</span>.publish(<span class="string">"refresh"</span>)  <span class="comment"># our new "the collection has been refreshed" event</span>
+
+  refresh: () -&gt;
+    <span class="comment"># ...</span>
+    <span class="property">@events</span>.publish(<span class="string">"refresh"</span>)  <span class="comment"># also needed here</span></code></pre>
+<p>So these two new events on the collection tell us two things about the collection, when a new item has been added and when the collection as a whole has been changed (either cleared out or refreshed from storage). What should these events trigger? Updates to the TodoApp view of course! If the collection is refreshed, we basically need to re-render the entire list. But we already have the code for that (<code>render</code>). What about &quot;add&quot;? We have a method for this too (<code>addOne</code>)! Lets wire it up.</p>
+<pre class="highlighted"><code class="coffeescript"><span class="class"><span class="keyword">class</span> <span class="title">TodoApp</span></span>
+  constructor: (el) -&gt;
+    <span class="comment"># ...</span>
+    <span class="property">@collection</span>.<span class="literal">on</span>(<span class="string">"refresh"</span>, <span class="property">@render</span>)
+    <span class="property">@collection</span>.<span class="literal">on</span>(<span class="string">"add"</span>, <span class="property">@addOne</span>)
+
+    <span class="property">@collection</span>.refresh()
+
+
+  <span class="comment"># the only thing needing changing here is the fat arrow because this is now a triggered method.</span>
+  render: =&gt;
+
+  <span class="comment"># change our method signature here like we did for the others, but no other changes needed</span>
+  addOne: (evtOrTodo, todo) =&gt;
+    todo ?= evtOrTodo
+    <span class="comment"># ... rest of the add code</span></code></pre>
+<p>And that&#39;s all that changes required to communicate these changes! Let&#39;s see it <a href="/todo/example-4.html">in action</a>.</p>
+<p>Wow! A working Todo app! All the pieces are in place, everybody is communicating and all that in less than 160 lines of code! Let&#39;s see the whole thing all together.</p>
+<pre class="highlighted"><code class="coffeescript"><span class="function"><span class="title">initEventHandler</span></span> = (context) -&gt;
+  events = $({})
+  events.publish = events.trigger
+
+  context.<span class="function"><span class="title">on</span></span> = (evt, callback) -&gt; events.<span class="literal">on</span>(evt, callback)
+  context.events = events
+
+  events
+
+<span class="class"><span class="keyword">class</span> <span class="title">Todo</span></span>
+  constructor: (<span class="property">@title</span>, <span class="property">@done</span>=<span class="literal">false</span>, <span class="property">@id</span>=<span class="literal">null</span>) -&gt;
+    initEventHandler(@)
+
+  toJSON: -&gt; {title: <span class="property">@title</span>, done: <span class="property">@done</span>, id: <span class="property">@id</span>}
+
+  toggle: =&gt; <span class="keyword">if</span> <span class="property">@done</span> <span class="keyword">then</span> <span class="property">@setNotDone</span>() <span class="keyword">else</span> <span class="property">@setDone</span>()
+
+  setDone: -&gt;
+    <span class="property">@done</span> = <span class="literal">true</span>
+    <span class="property">@change</span>()
+
+  setNotDone: -&gt;
+    <span class="property">@done</span> = <span class="literal">false</span>
+    <span class="property">@change</span>()
+
+  remove: -&gt; <span class="property">@events</span>.publish <span class="string">"remove"</span>, @
+
+  change: -&gt; <span class="property">@events</span>.publish <span class="string">"change"</span>, @
+
+Todo.<span class="function"><span class="title">create</span></span> = ({title: title, done: done, id: id}) -&gt;
+  <span class="keyword">new</span> Todo(title, done, id)
+
+<span class="class"><span class="keyword">class</span> <span class="title">Todos</span></span>
+  constructor: -&gt;
+    <span class="property">@store</span> = <span class="keyword">new</span> Storage(<span class="string">"todo"</span>)
+    <span class="property">@items</span> = []
+
+    initEventHandler(@)
+
+  update: (evtOrTodo, todo) =&gt;
+    todo ?= evtOrTodo
+    <span class="property">@store</span>.update(todo.toJSON())
+
+  create: (text) -&gt;
+    todo = <span class="keyword">new</span> Todo(text)
+    <span class="property">@add</span>(todo)
+
+  size: -&gt; <span class="property">@items</span>.length
+
+  add: (todo) -&gt;
+    <span class="property">@_bindItem</span>(todo)
+
+    todo.id = <span class="property">@store</span>.add(todo.toJSON())
+    <span class="property">@items</span>.push(todo)
+
+    <span class="property">@events</span>.publish(<span class="string">"add"</span>, todo)
+    todo
+
+  all: -&gt; <span class="property">@items</span>
+
+  clear: -&gt;
+    <span class="property">@store</span>.clear()
+    <span class="property">@events</span>.publish(<span class="string">"refresh"</span>)
+    @
+
+  remove: (evtOrTodo, todo) =&gt;
+    todo ?= evtOrTodo
+    <span class="property">@items</span> = <span class="property">@store</span>.remove todo
+
+  refresh: -&gt;
+    raw_items = <span class="property">@store</span>.all()
+    <span class="property">@items</span> = (<span class="property">@_createFromRaw</span>(item) <span class="keyword">for</span> item <span class="keyword">in</span> raw_items)
+
+    <span class="property">@events</span>.publish(<span class="string">"refresh"</span>)
+    @
+
+  _createFromRaw: (raw_item) -&gt;
+    todo = Todo.create(raw_item)
+    <span class="property">@_bindItem</span>(todo)
+    todo
+
+  _bindItem: (todo) -&gt;
+    todo.<span class="literal">on</span>(<span class="string">"change"</span>, <span class="property">@update</span>)
+    todo.<span class="literal">on</span>(<span class="string">"remove"</span>, <span class="property">@remove</span>)
+
+<span class="class"><span class="keyword">class</span> <span class="title">TodoView</span> <span class="keyword">extends</span> <span class="title">Mustachio</span></span>
+  templateName: <span class="string">"item-template"</span>
+
+  constructor: (<span class="property">@model</span>) -&gt;
+    <span class="keyword">super</span> <span class="property">@model</span>
+
+    <span class="property">@model</span>.<span class="literal">on</span>(<span class="string">"change"</span>, <span class="property">@render</span>)
+    <span class="property">@model</span>.<span class="literal">on</span>(<span class="string">"remove"</span>, <span class="property">@remove</span>)
+
+  render: =&gt;
+    html = <span class="keyword">super</span>
+
+    <span class="keyword">if</span> <span class="property">@el</span>
+      <span class="property">@el</span>.html(html)
+    <span class="keyword">else</span>
+      <span class="property">@el</span> = $(<span class="string">"&lt;li&gt;<span class="subst">#{html}</span>&lt;/li&gt;"</span>)
+      <span class="property">@el</span>.<span class="literal">on</span>(<span class="string">"click"</span>, <span class="string">".toggle"</span>, <span class="property">@toggle</span>)
+      <span class="property">@el</span>.<span class="literal">on</span>(<span class="string">"click"</span>, <span class="string">".destroy"</span>, <span class="property">@destroy</span>)
+
+    <span class="property">@el</span>.toggleClass(<span class="string">"done"</span>, <span class="property">@model</span>.done)
+    @
+
+  toggle: =&gt; <span class="property">@model</span>.toggle()
+
+  destroy: =&gt;
+    <span class="property">@model</span>.remove()
+
+  remove: =&gt;
+    <span class="property">@el</span>.remove()
+
+<span class="class"><span class="keyword">class</span> <span class="title">TodoApp</span></span>
+  constructor: (el) -&gt;
+    <span class="property">@collection</span> = <span class="keyword">new</span> Todos()
+    <span class="property">@el</span> = $(el)
+
+    <span class="property">@input</span> = <span class="property">@el</span>.find(<span class="string">"#new-todo"</span>)
+    <span class="property">@allCheckbox</span> = <span class="property">@el</span>.find(<span class="string">"#toggle-all"</span>).first()
+    <span class="property">@main</span> = <span class="property">@el</span>.find(<span class="string">'#main'</span>)
+    <span class="property">@list</span> = <span class="property">@main</span>.find(<span class="string">"#todo-list"</span>)
+
+    <span class="property">@collection</span>.<span class="literal">on</span>(<span class="string">"refresh"</span>, <span class="property">@render</span>)
+    <span class="property">@collection</span>.<span class="literal">on</span>(<span class="string">"add"</span>, <span class="property">@addOne</span>)
+
+    <span class="property">@input</span>.<span class="literal">on</span>(<span class="string">"keypress"</span>, <span class="property">@createOnEnter</span>)
+    <span class="property">@allCheckbox</span>.<span class="literal">on</span>(<span class="string">"click"</span>, <span class="property">@toggleAll</span>)
+
+    <span class="property">@collection</span>.refresh()
+
+  render: =&gt;
+    <span class="property">@list</span>.html(<span class="string">''</span>)
+    <span class="property">@addAll</span>()
+    <span class="keyword">if</span> <span class="property">@collection</span>.size() <span class="keyword">then</span> <span class="property">@main</span>.show() <span class="keyword">else</span> <span class="property">@main</span>.hide()
+
+  addAll: -&gt;
+    <span class="property">@addOne</span>(<span class="literal">null</span>, item) <span class="keyword">for</span> item <span class="keyword">in</span> <span class="property">@collection</span>.all()
+
+  addOne: (evt, todo) =&gt;
+    view = <span class="keyword">new</span> TodoView(todo)
+    <span class="property">@list</span>.append(view.render().el)
+    <span class="property">@main</span>.show() <span class="keyword">unless</span> <span class="property">@main</span>.<span class="keyword">is</span>(<span class="string">':visible'</span>)
+
+  createOnEnter: (evt) =&gt;
+    <span class="keyword">return</span> <span class="keyword">unless</span> evt.keyCode == <span class="number">13</span>
+    <span class="keyword">return</span> <span class="keyword">unless</span> <span class="property">@input</span>.val()
+
+    <span class="property">@collection</span>.create <span class="property">@input</span>.val()
+    <span class="property">@input</span>.val <span class="string">''</span>
+
+  toggleAll: (evt) =&gt;
+    target = $(evt.currentTarget)
+
+    <span class="keyword">if</span> target.<span class="keyword">is</span>(<span class="string">':checked'</span>)
+      todo.setDone()
+    <span class="keyword">else</span>
+      todo.setNotDone() <span class="keyword">for</span> todo <span class="keyword">in</span> <span class="property">@collection</span>.all()</code></pre>
+<p>You may notice some changes for the toggle all checkbox. Review the code to see the changes required to make it happen. Overall, pretty simple. This is why we want to write code like this. The smaller and more focused we can divide up our code, the easier it is to make changes to the parts where they need to interact.</p>
+
+    <script defer="defer"  src="/scripts/jquery.min.js"></script><script defer="defer"  src="/scripts/bootstrap.min.js"></script>
+</body>
+</html>
