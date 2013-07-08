@@ -1,0 +1,11 @@
+<html>
+<head>
+    <title><%= @document.title %> | Examples</title>
+    <%- @getBlock("meta").toHTML() %>
+    <%- @getBlock("styles").add(["/styles/github.css", "/styles/flatly.css", "/styles/ext.css"]).toHTML() %>
+</head>
+<body>
+    <%- @content %>
+    <%- @getBlock("scripts").add(["/scripts/jquery.min.js", "/scripts/bootstrap.min.js"]).toHTML() %>
+</body>
+</html>
