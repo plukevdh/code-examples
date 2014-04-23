@@ -16,7 +16,7 @@ TDD **is** a great idea, and while it seems counter-productive, ultimately it ca
 
 With that in mind, let's get started.
 
-## What does a TDD worflow look like.
+## What does a TDD Workflow Look Like?
 
 > Red. Green. Refactor.
 
@@ -30,7 +30,7 @@ With that in mind, let's try our hand at an example.
 
 ## The Example
 
-If you remember from our [ToDo App example](http://localhost:9778/todo/todo-steps.html), we backended the todo items to localStorage, using a simple wrapper. While I hid the implementation of that wrapper from you during the example, we're going to look at how to implement that mini-library for use anywhere. Here are some generic requirements:
+If you remember from our [ToDo App example](/todo/todo-steps.html), we backended the todo items to localStorage, using a simple wrapper. While I hid the implementation of that wrapper from you during the example, we're going to look at how to implement that mini-library for use anywhere. Here are some generic requirements:
 
 - Can store new items
 - Each item stored gets a unique id
