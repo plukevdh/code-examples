@@ -16,6 +16,7 @@ docpadConfig = {
     marked:
       markedOptions:
         renderer: renderer
+        ghm: true
 }
 
 module.exports = docpadConfig
