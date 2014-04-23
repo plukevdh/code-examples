@@ -1,0 +1,10 @@
+{
+  "version": 3,
+  "file": "example.js",
+  "sourceRoot": "../../../../../../../../../Applications/Sublime Text.app/Contents/MacOS",
+  "sources": [
+    "../../../../Users/lvanderhoeven/Code/Projects/BFG/examples/src/documents/oop/example.coffee"
+  ],
+  "names": [],
+  "mappings": ";AAAA;CAAA,KAAA,CAAA;;CAAA,CAAM;CACS,EAAA,CAAA,aAAA;CACX,SAAA,GAAA;CAAA,EAAc,CAAb,EAAD;CAAA,CAAA,CACU,CAAT,EAAD;AAEA,CAAA,EAAA,QAAU,mBAAV;CACE,EAAY,CAAA,CAAZ,GAAA;CAAA,GACC,CAAD,CAAO,EAAP;CAFF,MAJW;CAAb,IAAa;;CAAb;;CADF;CAAA"
+}
