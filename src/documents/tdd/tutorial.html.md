@@ -16,6 +16,108 @@ TDD **is** a great idea, and while it seems counter-productive, ultimately it ca
 
 With that in mind, let's get started.
 
+## How to setup Jasmine
+
+Setup is always a bit daunting. Jasmine really has a very simple runner. It's a standalone html file that allows you to include the scripts as you need. Download this from the [Jasmine GitHub repo](https://github.com/pivotal/jasmine/tree/master/dist). We'll be using the [2.0.0 release](https://github.com/pivotal/jasmine/raw/master/dist/jasmine-standalone-2.0.0.zip). 
+
+Once that's downloaded, unzip and place the contents of the folder into some spec/ folder or near wherever your javascripts generally go. I recommend placing them at the root of the project you are testing. Once you've got that, you can delete the `MIT.LICENSE`, `spec` and `src` folders. Leave the `SpecRunner.html` and `lib/` folder.
+
+Once you have some tests and/or scripts to test, you'll need to modify the `SpecRunner.html` folder to include them. If you open up the runner, the changes are pretty well marked:
+
+```html
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>Jasmine Spec Runner v2.0.0</title>
+
+  <link rel="shortcut icon" type="image/png" href="vendor/jasmine/jasmine_favicon.png">
+  <link rel="stylesheet" type="text/css" href="vendor/jasmine/jasmine.css">
+
+  <script type="text/javascript" src="vendor/jasmine/jasmine.js"></script>
+  <script type="text/javascript" src="vendor/jasmine/jasmine-html.js"></script>
+  <script type="text/javascript" src="vendor/jasmine/boot.js"></script>
+
+  <!-- include source files here... -->
+
+  <!-- include spec files here... -->
+
+</head>
+
+<body>
+</body>
+</html>
+```
+
+Delete any of the `<script>` tags under the two comments. There are some examples included with jasmine that we delete earlier. Under the "source files here..." comment, add `<script>` tags here with the **relative path** to your test files. For example: 
+
+```html
+<!-- include source files here... -->
+<script type="text/javascript" src="../js/home.js"></script>
+<script type="text/javascript" src="../js/productPage.js"></script>
+```
+
+If you have any other dependencies that these files need (jQuery, Modernizr, etc.) be sure to include them _before_ you include these files.
+
+```html
+<script type="text/javascript" src="../js/jquery-1.7.2.min.js"></script>
+<script type="text/javascript" src="../js/lib/Modernizr2.6.2.js"></script>
+
+<!-- include source files here... -->
+<script type="text/javascript" src="../js/home.js"></script>
+<script type="text/javascript" src="../js/productPage.js"></script>
+```
+
+If something seems off with the stuff loading, check the JS console when you open up the runner html page. It'll tell you if it can't find the javascript files (404 errors)/
+
+In the last section, add your specs:
+
+```html
+<script type="text/javascript" src="../js/jquery-1.7.2.min.js"></script>
+<script type="text/javascript" src="../js/lib/Modernizr2.6.2.js"></script>
+
+<!-- include source files here... -->
+<script type="text/javascript" src="../js/home.js"></script>
+<script type="text/javascript" src="../js/productPage.js"></script>
+
+<!-- include spec files here... -->
+<script type="text/javascript" src="../js/home_spec.js"></script>
+<script type="text/javascript" src="../js/productPage_spec.js"></script>
+```
+
+Try to be consistent with the naming convention. Use the filename (productPage for example) plus '_spec' or '.spec'. Decide on a convention and stick to it.
+
+For our case, we have no external dependencies so our SpecRunner.html file looks like this initially:
+
+```html
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>Jasmine Spec Runner v2.0.0</title>
+
+  <link rel="shortcut icon" type="image/png" href="vendor/jasmine/jasmine_favicon.png">
+  <link rel="stylesheet" type="text/css" href="vendor/jasmine/jasmine.css">
+
+  <script type="text/javascript" src="vendor/jasmine/jasmine.js"></script>
+  <script type="text/javascript" src="vendor/jasmine/jasmine-html.js"></script>
+  <script type="text/javascript" src="vendor/jasmine/boot.js"></script>
+
+  <!-- include source files here... -->
+  <script type="text/javascript" src="src/storage.js"></script>
+
+  <!-- include spec files here... -->
+  <script type="text/javascript" src="spec/storage_spec.js"></script>
+
+</head>
+
+<body>
+</body>
+</html>
+```
+
+Although initially, since we're writing **tests first**, I won't even have the `src/storage.js` file included until later. To run the tests, simply open the SpecRunner.html file in a browser. Boom, running tests.
+
 ## What does a TDD Workflow Look Like?
 
 > Red. Green. Refactor.
