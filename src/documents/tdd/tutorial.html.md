@@ -498,6 +498,8 @@ it("can store an item", function() {
 
 [And boom](spec_runner_13.html). 5 passing tests zero failure. Now look at all the beautiful code we've written! So simple, self-contained, and fully functional!
 
+## Review
+
 Let's look at the code we have in it's entirety so far:
 
 **Code**
